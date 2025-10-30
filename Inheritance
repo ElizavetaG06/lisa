@@ -1,0 +1,75 @@
+abstract class Vehicle {
+    protected String brand;
+    protected int maxSpeed;
+    
+    public Vehicle(String brand, int maxSpeed) {
+        this.brand = brand;
+        this.maxSpeed = maxSpeed;
+    }
+    
+    // Общий метод для всех транспортных средств
+    public void startEngine() {
+        System.out.println(brand + ": Двигатель запущен");
+    }
+    
+    // Абстрактный метод - должны реализовать потомки
+    public abstract void move();
+    
+    // Общий метод с реализацией по умолчанию
+    public void stop() {
+        System.out.println(brand + ": Транспортное средство остановилось");
+    }
+    
+    public String getInfo() {
+        return brand + " (макс. скорость: " + maxSpeed + " км/ч)";
+    }
+}
+
+// Класс-наследник - переиспользует и расширяет функциональность
+class Car extends Vehicle {
+    private int doorsCount;
+    
+    public Car(String brand, int maxSpeed, int doorsCount) {
+        super(brand, maxSpeed); // Вызов конструктора родителя
+        this.doorsCount = doorsCount;
+    }
+    
+    @Override
+    public void move() {
+        System.out.println(brand + ": Едет по дороге на " + maxSpeed + " км/ч");
+    }
+    
+    // Специфический метод только для автомобилей
+    public void openTrunk() {
+        System.out.println(brand + ": Багажник открыт");
+    }
+    
+    @Override
+    public String getInfo() {
+        return super.getInfo() + ", " + doorsCount + " дверей";
+    }
+}
+
+// Еще один наследник - другой тип транспорта
+class Bicycle extends Vehicle {
+    private boolean hasBasket;
+    
+    public Bicycle(String brand, int maxSpeed, boolean hasBasket) {
+        super(brand, maxSpeed);
+        this.hasBasket = hasBasket;
+    }
+    
+    @Override
+    public void move() {
+        System.out.println(brand + ": Крутит педали, скорость " + (maxSpeed / 2) + " км/ч");
+    }
+    
+    @Override
+    public void startEngine() {
+        System.out.println(brand + ": У велосипеда нет двигателя!");
+    }
+    
+    public void ringBell() {
+        System.out.println(brand + ": Дзинь-дзинь!");
+    }
+}
