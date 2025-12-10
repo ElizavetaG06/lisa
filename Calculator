@@ -1,0 +1,107 @@
+import java.util.Scanner;
+
+public class SimpleCalculator {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        
+        System.out.println("Калькулятор для базовых арифметических действий");
+        System.out.println("Поддерживаемые операции: +, -, *, /");
+        System.out.println("Введите выражение (например: 2 * 6.5) или 'выход' для завершения:");
+        
+        while (true) {
+            System.out.print("> ");
+            String input = scanner.nextLine().trim();
+            
+            if (input.equalsIgnoreCase("выход") || input.equalsIgnoreCase("exit")) {
+                System.out.println("Завершение работы калькулятора.");
+                break;
+            }
+            
+            if (input.isEmpty()) {
+                continue;
+            }
+            
+            try {
+                double result = calculate(input);
+                System.out.println("Результат: " + result);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Ошибка: " + e.getMessage());
+                System.out.println("Пожалуйста, введите выражение в формате: число оператор число");
+                System.out.println("Пример: 2 * 6.5");
+            } catch (ArithmeticException e) {
+                System.out.println("Ошибка: " + e.getMessage());
+            }
+        }
+        
+        scanner.close();
+    }
+    
+    public static double calculate(String expression) {
+        // Удаляем все лишние пробелы и заменяем запятые на точки
+        expression = expression.replace(',', '.').trim();
+        
+        // Проверяем формат выражения
+        String[] parts = expression.split("\\s+");
+        if (parts.length < 3) {
+            throw new IllegalArgumentException("Неверный формат выражения. Ожидается: число оператор число");
+        }
+        
+        // Парсим первое число
+        double num1;
+        try {
+            num1 = Double.parseDouble(parts[0]);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Первое число некорректно: " + parts[0]);
+        }
+        
+        // Получаем оператор
+        String operator = parts[1];
+        
+        // Объединяем оставшиеся части для второго числа (на случай, если число содержит пробелы)
+        StringBuilder secondNumberBuilder = new StringBuilder();
+        for (int i = 2; i < parts.length; i++) {
+            secondNumberBuilder.append(parts[i]);
+            if (i < parts.length - 1) {
+                secondNumberBuilder.append(" ");
+            }
+        }
+        
+        // Парсим второе число
+        double num2;
+        try {
+            num2 = Double.parseDouble(secondNumberBuilder.toString());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Второе число некорректно: " + secondNumberBuilder.toString());
+        }
+        
+        // Выполняем вычисление
+        return performOperation(num1, num2, operator);
+    }
+    
+    private static double performOperation(double num1, double num2, String operator) {
+        switch (operator) {
+            case "+":
+                return num1 + num2;
+            case "-":
+                return num1 - num2;
+            case "*":
+                return num1 * num2;
+            case "/":
+                if (num2 == 0) {
+                    throw new ArithmeticException("Деление на ноль невозможно");
+                }
+                return num1 / num2;
+            case "x":
+            case "X":
+                return num1 * num2;
+            case ":":
+                if (num2 == 0) {
+                    throw new ArithmeticException("Деление на ноль невозможно");
+                }
+                return num1 / num2;
+            default:
+                throw new IllegalArgumentException("Неподдерживаемая операция: " + operator + 
+                                                 ". Поддерживаются: +, -, *, /");
+        }
+    }
+}
