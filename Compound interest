@@ -1,0 +1,458 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+// Класс для хранения результатов расчетов
+class CalculationResult {
+    private final String type;
+    private final double principal;
+    private final double rate;
+    private final int periods;
+    private final double result;
+    
+    public CalculationResult(String type, double principal, double rate, 
+                            int periods, double result) {
+        this.type = type;
+        this.principal = principal;
+        this.rate = rate;
+        this.periods = periods;
+        this.result = result;
+    }
+    
+    @Override
+    public String toString() {
+        switch (type) {
+            case "future":
+                return String.format("Будущая стоимость: начальная сумма = %.2f, " +
+                                   "ставка = %.2f%%, периоды = %d, результат = %.2f",
+                                   principal, rate * 100, periods, result);
+            case "present":
+                return String.format("Текущая стоимость: будущая сумма = %.2f, " +
+                                   "ставка = %.2f%%, периоды = %d, результат = %.2f",
+                                   principal, rate * 100, periods, result);
+            case "rate":
+                return String.format("Расчет ставки: начальная сумма = %.2f, " +
+                                   "будущая сумма = %.2f, периоды = %d, ставка = %.2f%%",
+                                   principal, result, periods, rate * 100);
+            default:
+                return "Неизвестный тип расчета";
+        }
+    }
+}
+
+// Основной класс калькулятора сложных процентов
+public class CompoundInterestCalculator {
+    private final List<CalculationResult> history;
+    private final Scanner scanner;
+    
+    public CompoundInterestCalculator() {
+        this.history = new ArrayList<>();
+        this.scanner = new Scanner(System.in);
+    }
+    
+    /**
+     * Расчет будущей стоимости по формуле сложных процентов
+     * FV = PV * (1 + r)^n
+     * где:
+     * FV - будущая стоимость
+     * PV - текущая стоимость (начальная сумма)
+     * r - процентная ставка за период (в десятичной форме)
+     * n - количество периодов
+     */
+    public double calculateFutureValue(double principal, double rate, int periods) {
+        if (principal <= 0) {
+            throw new IllegalArgumentException("Начальная сумма должна быть положительной");
+        }
+        if (periods < 0) {
+            throw new IllegalArgumentException("Количество периодов не может быть отрицательным");
+        }
+        
+        double futureValue = principal * Math.pow(1 + rate, periods);
+        
+        // Сохраняем в историю
+        history.add(new CalculationResult("future", principal, rate, periods, futureValue));
+        
+        return futureValue;
+    }
+    
+    /**
+     * Расчет текущей стоимости (обратная задача)
+     * PV = FV / (1 + r)^n
+     */
+    public double calculatePresentValue(double futureValue, double rate, int periods) {
+        if (futureValue <= 0) {
+            throw new IllegalArgumentException("Будущая стоимость должна быть положительной");
+        }
+        if (rate <= -1) {
+            throw new IllegalArgumentException("Ставка не может быть <= -100%");
+        }
+        if (periods < 0) {
+            throw new IllegalArgumentException("Количество периодов не может быть отрицательным");
+        }
+        
+        double presentValue = futureValue / Math.pow(1 + rate, periods);
+        
+        // Сохраняем в историю
+        history.add(new CalculationResult("present", futureValue, rate, periods, presentValue));
+        
+        return presentValue;
+    }
+    
+    /**
+     * Расчет процентной ставки (вторая задача)
+     * r = (FV / PV)^(1/n) - 1
+     */
+    public double calculateRequiredRate(double presentValue, double futureValue, int periods) {
+        if (presentValue <= 0) {
+            throw new IllegalArgumentException("Начальная сумма должна быть положительной");
+        }
+        if (futureValue <= 0) {
+            throw new IllegalArgumentException("Будущая сумма должна быть положительной");
+        }
+        if (periods <= 0) {
+            throw new IllegalArgumentException("Количество периодов должно быть положительным");
+        }
+        if (futureValue < presentValue) {
+            throw new IllegalArgumentException("Будущая сумма должна быть больше начальной");
+        }
+        
+        double rate = Math.pow(futureValue / presentValue, 1.0 / periods) - 1;
+        
+        // Сохраняем в историю
+        history.add(new CalculationResult("rate", presentValue, rate, periods, futureValue));
+        
+        return rate;
+    }
+    
+    /**
+     * Расчет времени для достижения цели
+     * n = log(FV / PV) / log(1 + r)
+     */
+    public double calculateRequiredPeriods(double presentValue, double futureValue, double rate) {
+        if (presentValue <= 0) {
+            throw new IllegalArgumentException("Начальная сумма должна быть положительной");
+        }
+        if (futureValue <= 0) {
+            throw new IllegalArgumentException("Будущая сумма должна быть положительной");
+        }
+        if (rate <= -1) {
+            throw new IllegalArgumentException("Ставка не может быть <= -100%");
+        }
+        if (futureValue < presentValue && rate >= 0) {
+            throw new IllegalArgumentException("При положительной ставке будущая сумма должна быть больше начальной");
+        }
+        
+        double periods = Math.log(futureValue / presentValue) / Math.log(1 + rate);
+        
+        return periods;
+    }
+    
+    /**
+     * Вывод детальной таблицы накоплений по периодам
+     */
+    public void printAccumulationTable(double principal, double rate, int periods) {
+        System.out.println("\nТаблица накоплений:");
+        System.out.println("┌───────┬─────────────┬─────────────┬─────────────┐");
+        System.out.println("│ Период │ Начальный   │ Проценты    │ Конечный    │");
+        System.out.println("│       │ баланс      │ за период   │ баланс      │");
+        System.out.println("├───────┼─────────────┼─────────────┼─────────────┤");
+        
+        double balance = principal;
+        for (int i = 1; i <= periods; i++) {
+            double interest = balance * rate;
+            balance += interest;
+            
+            System.out.printf("│ %5d │ %11.2f │ %11.2f │ %11.2f │\n", 
+                            i, balance - interest, interest, balance);
+            
+            if (i % 10 == 0 && i < periods) {
+                System.out.println("├───────┼─────────────┼─────────────┼─────────────┤");
+            }
+        }
+        System.out.println("└───────┴─────────────┴─────────────┴─────────────┘");
+    }
+    
+    /**
+     * Вывод истории расчетов
+     */
+    public void showHistory() {
+        if (history.isEmpty()) {
+            System.out.println("История расчетов пуста.");
+            return;
+        }
+        
+        System.out.println("\n=== ИСТОРИЯ РАСЧЕТОВ ===");
+        for (int i = 0; i < history.size(); i++) {
+            System.out.println((i + 1) + ". " + history.get(i));
+        }
+        System.out.println("========================");
+    }
+    
+    /**
+     * Очистка истории
+     */
+    public void clearHistory() {
+        history.clear();
+        System.out.println("История расчетов очищена.");
+    }
+    
+    /**
+     * Основное меню программы
+     */
+    public void run() {
+        System.out.println("╔══════════════════════════════════════════╗");
+        System.out.println("║  КАЛЬКУЛЯТОР СЛОЖНЫХ ПРОЦЕНТОВ v1.0      ║");
+        System.out.println("╚══════════════════════════════════════════╝");
+        
+        while (true) {
+            printMenu();
+            String choice = scanner.nextLine().trim();
+            
+            switch (choice) {
+                case "1":
+                    calculateFutureValueMenu();
+                    break;
+                case "2":
+                    calculatePresentValueMenu();
+                    break;
+                case "3":
+                    calculateRequiredRateMenu();
+                    break;
+                case "4":
+                    calculateRequiredPeriodsMenu();
+                    break;
+                case "5":
+                    showHistory();
+                    break;
+                case "6":
+                    clearHistory();
+                    break;
+                case "7":
+                    printExplanation();
+                    break;
+                case "0":
+                    System.out.println("Спасибо за использование калькулятора!");
+                    return;
+                default:
+                    System.out.println("Неверный выбор. Попробуйте снова.");
+            }
+            
+            System.out.println("\nНажмите Enter для продолжения...");
+            scanner.nextLine();
+        }
+    }
+    
+    private void printMenu() {
+        System.out.println("\n══════════════════ МЕНЮ ══════════════════");
+        System.out.println("1. Расчет будущей стоимости");
+        System.out.println("2. Расчет текущей стоимости");
+        System.out.println("3. Расчет требуемой процентной ставки");
+        System.out.println("4. Расчет требуемого количества периодов");
+        System.out.println("5. Показать историю расчетов");
+        System.out.println("6. Очистить историю");
+        System.out.println("7. Справка по формулам");
+        System.out.println("0. Выход");
+        System.out.print("Выберите опцию: ");
+    }
+    
+    private void calculateFutureValueMenu() {
+        try {
+            System.out.println("\n--- РАСЧЕТ БУДУЩЕЙ СТОИМОСТИ ---");
+            System.out.println("Формула: FV = PV * (1 + r)^n");
+            
+            System.out.print("Введите начальную сумму (PV): ");
+            double principal = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+            
+            System.out.print("Введите годовую процентную ставку (%): ");
+            double annualRate = Double.parseDouble(scanner.nextLine().replace(',', '.')) / 100;
+            
+            System.out.print("Введите количество периодов начисления в году (1-ежегодно, 12-ежемесячно): ");
+            int compoundsPerYear = Integer.parseInt(scanner.nextLine());
+            
+            System.out.print("Введите количество лет: ");
+            int years = Integer.parseInt(scanner.nextLine());
+            
+            double ratePerPeriod = annualRate / compoundsPerYear;
+            int totalPeriods = years * compoundsPerYear;
+            
+            double futureValue = calculateFutureValue(principal, ratePerPeriod, totalPeriods);
+            
+            System.out.printf("\nРЕЗУЛЬТАТ:\n");
+            System.out.printf("Начальная сумма: %.2f\n", principal);
+            System.out.printf("Годовая ставка: %.2f%%\n", annualRate * 100);
+            System.out.printf("Периодичность начисления: %d раз в год\n", compoundsPerYear);
+            System.out.printf("Срок: %d лет\n", years);
+            System.out.printf("Ставка за период: %.4f%%\n", ratePerPeriod * 100);
+            System.out.printf("Всего периодов: %d\n", totalPeriods);
+            System.out.printf("Будущая стоимость: %.2f\n", futureValue);
+            System.out.printf("Общий доход: %.2f\n", futureValue - principal);
+            
+            // Выводим таблицу накоплений для наглядности
+            if (totalPeriods <= 50) {
+                printAccumulationTable(principal, ratePerPeriod, totalPeriods);
+            }
+            
+        } catch (NumberFormatException e) {
+            System.out.println("Ошибка: введите корректное число.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ошибка: " + e.getMessage());
+        }
+    }
+    
+    private void calculatePresentValueMenu() {
+        try {
+            System.out.println("\n--- РАСЧЕТ ТЕКУЩЕЙ СТОИМОСТИ ---");
+            System.out.println("Формула: PV = FV / (1 + r)^n");
+            
+            System.out.print("Введите будущую сумму (FV): ");
+            double futureValue = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+            
+            System.out.print("Введите годовую процентную ставку (%): ");
+            double annualRate = Double.parseDouble(scanner.nextLine().replace(',', '.')) / 100;
+            
+            System.out.print("Введите количество периодов начисления в году (1-ежегодно, 12-ежемесячно): ");
+            int compoundsPerYear = Integer.parseInt(scanner.nextLine());
+            
+            System.out.print("Введите количество лет: ");
+            int years = Integer.parseInt(scanner.nextLine());
+            
+            double ratePerPeriod = annualRate / compoundsPerYear;
+            int totalPeriods = years * compoundsPerYear;
+            
+            double presentValue = calculatePresentValue(futureValue, ratePerPeriod, totalPeriods);
+            
+            System.out.printf("\nРЕЗУЛЬТАТ:\n");
+            System.out.printf("Будущая сумма: %.2f\n", futureValue);
+            System.out.printf("Годовая ставка: %.2f%%\n", annualRate * 100);
+            System.out.printf("Периодичность начисления: %d раз в год\n", compoundsPerYear);
+            System.out.printf("Срок: %d лет\n", years);
+            System.out.printf("Текущая стоимость (сколько нужно вложить сейчас): %.2f\n", presentValue);
+            System.out.printf("Дисконт (разница): %.2f\n", futureValue - presentValue);
+            
+        } catch (NumberFormatException e) {
+            System.out.println("Ошибка: введите корректное число.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ошибка: " + e.getMessage());
+        }
+    }
+    
+    private void calculateRequiredRateMenu() {
+        try {
+            System.out.println("\n--- РАСЧЕТ ТРЕБУЕМОЙ СТАВКИ ---");
+            System.out.println("Формула: r = (FV / PV)^(1/n) - 1");
+            System.out.println("Какая ставка нужна, чтобы достичь цели?");
+            
+            System.out.print("Введите начальную сумму (PV): ");
+            double presentValue = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+            
+            System.out.print("Введите желаемую будущую сумму (FV): ");
+            double futureValue = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+            
+            System.out.print("Введите количество периодов начисления в году (1-ежегодно, 12-ежемесячно): ");
+            int compoundsPerYear = Integer.parseInt(scanner.nextLine());
+            
+            System.out.print("Введите количество лет: ");
+            int years = Integer.parseInt(scanner.nextLine());
+            
+            int totalPeriods = years * compoundsPerYear;
+            
+            double ratePerPeriod = calculateRequiredRate(presentValue, futureValue, totalPeriods);
+            double annualRate = ratePerPeriod * compoundsPerYear;
+            
+            System.out.printf("\nРЕЗУЛЬТАТ:\n");
+            System.out.printf("Начальная сумма: %.2f\n", presentValue);
+            System.out.printf("Целевая сумма: %.2f\n", futureValue);
+            System.out.printf("Срок: %d лет\n", years);
+            System.out.printf("Периодичность начисления: %d раз в год\n", compoundsPerYear);
+            System.out.printf("Ставка за период: %.4f%%\n", ratePerPeriod * 100);
+            System.out.printf("Годовая ставка: %.4f%%\n", annualRate * 100);
+            System.out.printf("Эффективная годовая ставка (при ежемесячном начислении): %.4f%%\n", 
+                            (Math.pow(1 + ratePerPeriod, compoundsPerYear) - 1) * 100);
+            
+            // Дополнительная информация
+            double futureValueCheck = calculateFutureValue(presentValue, ratePerPeriod, totalPeriods);
+            System.out.printf("Проверка: при ставке %.4f%% будущая сумма будет %.2f\n", 
+                            annualRate * 100, futureValueCheck);
+            
+        } catch (NumberFormatException e) {
+            System.out.println("Ошибка: введите корректное число.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ошибка: " + e.getMessage());
+        }
+    }
+    
+    private void calculateRequiredPeriodsMenu() {
+        try {
+            System.out.println("\n--- РАСЧЕТ ТРЕБУЕМОГО ВРЕМЕНИ ---");
+            System.out.println("Формула: n = log(FV / PV) / log(1 + r)");
+            System.out.println("За сколько времени можно достичь цели?");
+            
+            System.out.print("Введите начальную сумму (PV): ");
+            double presentValue = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+            
+            System.out.print("Введите желаемую будущую сумму (FV): ");
+            double futureValue = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+            
+            System.out.print("Введите годовую процентную ставку (%): ");
+            double annualRate = Double.parseDouble(scanner.nextLine().replace(',', '.')) / 100;
+            
+            System.out.print("Введите количество периодов начисления в году (1-ежегодно, 12-ежемесячно): ");
+            int compoundsPerYear = Integer.parseInt(scanner.nextLine());
+            
+            double ratePerPeriod = annualRate / compoundsPerYear;
+            double periods = calculateRequiredPeriods(presentValue, futureValue, ratePerPeriod);
+            double years = periods / compoundsPerYear;
+            
+            System.out.printf("\nРЕЗУЛЬТАТ:\n");
+            System.out.printf("Начальная сумма: %.2f\n", presentValue);
+            System.out.printf("Целевая сумма: %.2f\n", futureValue);
+            System.out.printf("Годовая ставка: %.2f%%\n", annualRate * 100);
+            System.out.printf("Периодичность начисления: %d раз в год\n", compoundsPerYear);
+            System.out.printf("Требуется периодов: %.2f\n", periods);
+            System.out.printf("Требуется лет: %.2f\n", years);
+            
+            // Округляем до целого количества периодов и показываем итоговую сумму
+            int roundedPeriods = (int) Math.ceil(periods);
+            double finalValue = calculateFutureValue(presentValue, ratePerPeriod, roundedPeriods);
+            System.out.printf("За %d периодов (%.2f лет) сумма составит: %.2f\n", 
+                            roundedPeriods, (double)roundedPeriods / compoundsPerYear, finalValue);
+            
+        } catch (NumberFormatException e) {
+            System.out.println("Ошибка: введите корректное число.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ошибка: " + e.getMessage());
+        }
+    }
+    
+    private void printExplanation() {
+        System.out.println("\n=== СПРАВКА ПО ФОРМУЛАМ СЛОЖНЫХ ПРОЦЕНТОВ ===");
+        System.out.println("1. Будущая стоимость (Future Value - FV):");
+        System.out.println("   FV = PV * (1 + r)^n");
+        System.out.println("   где: PV - начальная сумма, r - ставка за период, n - количество периодов");
+        System.out.println();
+        System.out.println("2. Текущая стоимость (Present Value - PV):");
+        System.out.println("   PV = FV / (1 + r)^n");
+        System.out.println();
+        System.out.println("3. Расчет ставки:");
+        System.out.println("   r = (FV / PV)^(1/n) - 1");
+        System.out.println();
+        System.out.println("4. Расчет количества периодов:");
+        System.out.println("   n = log(FV / PV) / log(1 + r)");
+        System.out.println();
+        System.out.println("Примеры:");
+        System.out.println("  Начальная сумма: 1000 руб.");
+        System.out.println("  Годовая ставка: 10%");
+        System.out.println("  Срок: 5 лет");
+        System.out.println("  Ежегодное начисление: 1000 * (1 + 0.10)^5 = 1610.51 руб.");
+        System.out.println();
+        System.out.println("ПРАВИЛО 72:");
+        System.out.println("  Чтобы узнать, за сколько лет сумма удвоится:");
+        System.out.println("  Годы ≈ 72 / годовая ставка (%)");
+        System.out.println("  Пример: при ставке 10% сумма удвоится за 72/10 ≈ 7.2 лет");
+    }
+    
+    public static void main(String[] args) {
+        CompoundInterestCalculator calculator = new CompoundInterestCalculator();
+        calculator.run();
+    }
+}
