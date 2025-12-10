@@ -1,0 +1,279 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class Calculator extends JFrame implements ActionListener {
+    
+    // Компоненты калькулятора
+    private JTextField display;
+    private JButton[] numberButtons;
+    private JButton[] functionButtons;
+    private JButton addButton, subButton, mulButton, divButton;
+    private JButton decButton, equButton, delButton, clrButton;
+    private JPanel panel;
+    
+    // Переменные для вычислений
+    private double num1 = 0, num2 = 0, result = 0;
+    private char operator;
+    private boolean isNewCalculation = true;
+    
+    public Calculator() {
+        // Настройка окна
+        setTitle("Калькулятор");
+        setSize(400, 550);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setResizable(false);
+        
+        // Создание компонентов
+        createComponents();
+        
+        // Добавление компонентов на форму
+        addComponents();
+        
+        setVisible(true);
+    }
+    
+    private void createComponents() {
+        // Поле для отображения
+        display = new JTextField();
+        display.setBounds(50, 25, 300, 50);
+        display.setFont(new Font("Arial", Font.BOLD, 24));
+        display.setEditable(false);
+        display.setHorizontalAlignment(JTextField.RIGHT);
+        display.setText("0");
+        
+        // Кнопки цифр
+        numberButtons = new JButton[10];
+        for (int i = 0; i < 10; i++) {
+            numberButtons[i] = new JButton(String.valueOf(i));
+            numberButtons[i].setFont(new Font("Arial", Font.BOLD, 18));
+            numberButtons[i].addActionListener(this);
+            numberButtons[i].setFocusable(false);
+        }
+        
+        // Функциональные кнопки
+        addButton = createFunctionButton("+");
+        subButton = createFunctionButton("-");
+        mulButton = createFunctionButton("*");
+        divButton = createFunctionButton("/");
+        decButton = createFunctionButton(".");
+        equButton = createFunctionButton("=");
+        delButton = createFunctionButton("DEL");
+        clrButton = createFunctionButton("C");
+        
+        // Панель для кнопок
+        panel = new JPanel();
+        panel.setBounds(50, 100, 300, 350);
+        panel.setLayout(new GridLayout(5, 4, 10, 10));
+    }
+    
+    private JButton createFunctionButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 18));
+        button.addActionListener(this);
+        button.setFocusable(false);
+        
+        // Установка цветов для разных типов кнопок
+        if (text.equals("=")) {
+            button.setBackground(new Color(0, 150, 0));
+            button.setForeground(Color.WHITE);
+        } else if (text.equals("C") || text.equals("DEL")) {
+            button.setBackground(new Color(200, 0, 0));
+            button.setForeground(Color.WHITE);
+        } else if (text.matches("[+\\-*/]")) {
+            button.setBackground(new Color(70, 130, 180));
+            button.setForeground(Color.WHITE);
+        } else {
+            button.setBackground(new Color(240, 240, 240));
+        }
+        
+        return button;
+    }
+    
+    private void addComponents() {
+        // Добавляем компоненты на форму
+        setLayout(null);
+        add(display);
+        add(panel);
+        
+        // Добавляем кнопки на панель в правильном порядке
+        panel.add(clrButton);
+        panel.add(delButton);
+        panel.add(divButton);
+        panel.add(mulButton);
+        
+        panel.add(numberButtons[7]);
+        panel.add(numberButtons[8]);
+        panel.add(numberButtons[9]);
+        panel.add(subButton);
+        
+        panel.add(numberButtons[4]);
+        panel.add(numberButtons[5]);
+        panel.add(numberButtons[6]);
+        panel.add(addButton);
+        
+        panel.add(numberButtons[1]);
+        panel.add(numberButtons[2]);
+        panel.add(numberButtons[3]);
+        panel.add(equButton);
+        
+        panel.add(numberButtons[0]);
+        panel.add(decButton);
+        
+        // Добавляем пустые ячейки для выравнивания
+        panel.add(new JLabel(""));
+        panel.add(new JLabel(""));
+    }
+    
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        Object source = e.getSource();
+        
+        // Обработка цифровых кнопок
+        for (int i = 0; i < 10; i++) {
+            if (source == numberButtons[i]) {
+                handleNumberInput(i);
+                return;
+            }
+        }
+        
+        // Обработка функциональных кнопок
+        if (source == addButton) {
+            handleOperator('+');
+        } else if (source == subButton) {
+            handleOperator('-');
+        } else if (source == mulButton) {
+            handleOperator('*');
+        } else if (source == divButton) {
+            handleOperator('/');
+        } else if (source == decButton) {
+            handleDecimalPoint();
+        } else if (source == equButton) {
+            calculateResult();
+        } else if (source == clrButton) {
+            clearAll();
+        } else if (source == delButton) {
+            deleteLastCharacter();
+        }
+    }
+    
+    private void handleNumberInput(int number) {
+        String currentText = display.getText();
+        
+        if (isNewCalculation || currentText.equals("0")) {
+            display.setText(String.valueOf(number));
+            isNewCalculation = false;
+        } else {
+            display.setText(currentText + number);
+        }
+    }
+    
+    private void handleOperator(char op) {
+        if (!isNewCalculation) {
+            // Если уже есть первое число, вычисляем промежуточный результат
+            if (!display.getText().isEmpty()) {
+                num1 = Double.parseDouble(display.getText());
+            }
+            operator = op;
+            isNewCalculation = true;
+        } else {
+            // Если нажали оператор без ввода нового числа
+            operator = op;
+        }
+    }
+    
+    private void handleDecimalPoint() {
+        String currentText = display.getText();
+        
+        if (isNewCalculation) {
+            display.setText("0.");
+            isNewCalculation = false;
+        } else if (!currentText.contains(".")) {
+            display.setText(currentText + ".");
+        }
+    }
+    
+    private void calculateResult() {
+        if (!isNewCalculation) {
+            num2 = Double.parseDouble(display.getText());
+            
+            try {
+                switch (operator) {
+                    case '+':
+                        result = num1 + num2;
+                        break;
+                    case '-':
+                        result = num1 - num2;
+                        break;
+                    case '*':
+                        result = num1 * num2;
+                        break;
+                    case '/':
+                        if (num2 == 0) {
+                            display.setText("Ошибка: деление на 0");
+                            isNewCalculation = true;
+                            return;
+                        }
+                        result = num1 / num2;
+                        break;
+                    default:
+                        return;
+                }
+                
+                // Отображаем результат
+                display.setText(formatResult(result));
+                isNewCalculation = true;
+                
+                // Сбрасываем оператор
+                operator = '\0';
+                
+            } catch (Exception ex) {
+                display.setText("Ошибка");
+                isNewCalculation = true;
+            }
+        }
+    }
+    
+    private String formatResult(double value) {
+        // Если число целое, отображаем без точки
+        if (value == (long) value) {
+            return String.format("%d", (long) value);
+        } else {
+            // Ограничиваем количество знаков после запятой
+            return String.format("%.10f", value).replaceAll("0*$", "").replaceAll("\\.$", "");
+        }
+    }
+    
+    private void clearAll() {
+        display.setText("0");
+        num1 = 0;
+        num2 = 0;
+        result = 0;
+        operator = '\0';
+        isNewCalculation = true;
+    }
+    
+    private void deleteLastCharacter() {
+        String currentText = display.getText();
+        
+        if (currentText.length() > 1) {
+            display.setText(currentText.substring(0, currentText.length() - 1));
+        } else {
+            display.setText("0");
+            isNewCalculation = true;
+        }
+    }
+    
+    // Основной метод для запуска приложения
+    public static void main(String[] args) {
+        // Запускаем в Event Dispatch Thread для безопасности
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new Calculator();
+            }
+        });
+    }
+}
