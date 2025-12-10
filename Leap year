@@ -1,0 +1,388 @@
+import java.util.Scanner;
+import java.util.InputMismatchException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class LeapYearChecker {
+    
+    // Класс для хранения истории проверок
+    static class YearCheck {
+        private int year;
+        private boolean isLeap;
+        private String result;
+        
+        public YearCheck(int year, boolean isLeap) {
+            this.year = year;
+            this.isLeap = isLeap;
+            this.result = year + " - " + (isLeap ? "високосный" : "не високосный");
+        }
+        
+        @Override
+        public String toString() {
+            return result;
+        }
+        
+        public int getYear() { return year; }
+        public boolean isLeap() { return isLeap; }
+    }
+    
+    private static List<YearCheck> history = new ArrayList<>();
+    private static Scanner scanner = new Scanner(System.in);
+    
+    /**
+     * Основной метод проверки високосного года
+     * Правила:
+     * 1. Год делится на 400 -> високосный
+     * 2. Год делится на 100 -> не високосный
+     * 3. Год делится на 4 -> високосный
+     * 4. Во всех остальных случаях -> не високосный
+     */
+    public static boolean isLeapYear(int year) {
+        if (year < 1) {
+            throw new IllegalArgumentException("Год должен быть положительным числом");
+        }
+        
+        if (year % 400 == 0) {
+            return true;
+        } else if (year % 100 == 0) {
+            return false;
+        } else {
+            return year % 4 == 0;
+        }
+    }
+    
+    /**
+     * Альтернативная реализация с использованием логических операторов
+     */
+    public static boolean isLeapYearAlt(int year) {
+        if (year < 1) {
+            throw new IllegalArgumentException("Год должен быть положительным числом");
+        }
+        
+        return (year % 4 == 0) && (year % 100 != 0 || year % 400 == 0);
+    }
+    
+    /**
+     * Проверка года с подробным объяснением
+     */
+    public static void checkYearWithExplanation(int year) {
+        System.out.println("\n" + "═".repeat(50));
+        System.out.println("ПРОВЕРКА ГОДА: " + year);
+        System.out.println("═".repeat(50));
+        
+        try {
+            if (year < 1) {
+                throw new IllegalArgumentException("Год не может быть меньше 1");
+            }
+            
+            boolean result = isLeapYear(year);
+            
+            // Сохраняем в историю
+            YearCheck check = new YearCheck(year, result);
+            history.add(check);
+            
+            // Вывод результата с объяснением
+            System.out.println("Результат: " + (result ? "ВИСОКОСНЫЙ" : "НЕ ВИСОКОСНЫЙ"));
+            System.out.println("\nОбъяснение:");
+            
+            if (year % 400 == 0) {
+                System.out.printf("  ✓ %d делится на 400 -> високосный год\n", year);
+            } else if (year % 100 == 0) {
+                System.out.printf("  ✗ %d делится на 100, но НЕ делится на 400 -> не високосный\n", year);
+            } else if (year % 4 == 0) {
+                System.out.printf("  ✓ %d делится на 4 и НЕ делится на 100 -> високосный\n", year);
+            } else {
+                System.out.printf("  ✗ %d не делится на 4 -> не високосный\n", year);
+            }
+            
+            // Дополнительная информация
+            System.out.println("\nДополнительная информация:");
+            System.out.printf("  Дней в феврале: %d\n", result ? 29 : 28);
+            System.out.printf("  Всего дней в году: %d\n", result ? 366 : 365);
+            
+            // Следующий/предыдущий високосный год
+            findNearbyLeapYears(year);
+            
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ошибка: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Поиск ближайших високосных лет
+     */
+    private static void findNearbyLeapYears(int year) {
+        System.out.println("\nБлижайшие високосные годы:");
+        
+        int prevLeap = year - 1;
+        while (!isLeapYear(prevLeap) && prevLeap > 0) {
+            prevLeap--;
+        }
+        if (prevLeap > 0) {
+            System.out.printf("  Предыдущий: %d (%d лет назад)\n", prevLeap, year - prevLeap);
+        }
+        
+        int nextLeap = year + 1;
+        while (!isLeapYear(nextLeap)) {
+            nextLeap++;
+        }
+        System.out.printf("  Следующий: %d (через %d лет)\n", nextLeap, nextLeap - year);
+    }
+    
+    /**
+     * Проверка года с вводом пользователя
+     */
+    public static void checkUserInputYear() {
+        System.out.print("\nВведите год для проверки: ");
+        
+        try {
+            String input = scanner.nextLine().trim();
+            
+            // Проверка на пустой ввод
+            if (input.isEmpty()) {
+                throw new IllegalArgumentException("Ввод не может быть пустым");
+            }
+            
+            // Парсинг года
+            int year;
+            try {
+                year = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                throw new InputMismatchException("Неверный формат года. Введите целое число.");
+            }
+            
+            // Проверка на слишком большие/маленькие значения
+            if (Math.abs(year) > 100000) {
+                throw new IllegalArgumentException("Год должен быть в диапазоне ±100000");
+            }
+            
+            // Проверка года
+            checkYearWithExplanation(year);
+            
+        } catch (InputMismatchException | IllegalArgumentException e) {
+            System.out.println("Ошибка ввода: " + e.getMessage());
+            System.out.println("Пожалуйста, введите корректный год (например: 2024, 1900, 1600)");
+        }
+    }
+    
+    /**
+     * Проверка диапазона лет
+     */
+    public static void checkYearRange() {
+        try {
+            System.out.print("\nВведите начальный год: ");
+            int startYear = scanner.nextInt();
+            
+            System.out.print("Введите конечный год: ");
+            int endYear = scanner.nextInt();
+            scanner.nextLine(); // очистка буфера
+            
+            if (startYear > endYear) {
+                throw new IllegalArgumentException("Начальный год должен быть меньше конечного");
+            }
+            if (startYear < 1 || endYear < 1) {
+                throw new IllegalArgumentException("Года должны быть положительными");
+            }
+            if (endYear - startYear > 100) {
+                throw new IllegalArgumentException("Диапазон не должен превышать 100 лет");
+            }
+            
+            System.out.println("\nВисокосные годы в диапазоне " + startYear + "-" + endYear + ":");
+            System.out.println("-".repeat(40));
+            
+            int leapCount = 0;
+            for (int year = startYear; year <= endYear; year++) {
+                if (isLeapYear(year)) {
+                    System.out.printf("%6d", year);
+                    leapCount++;
+                    
+                    if (leapCount % 10 == 0) {
+                        System.out.println();
+                    }
+                }
+            }
+            
+            if (leapCount % 10 != 0) {
+                System.out.println();
+            }
+            
+            System.out.println("-".repeat(40));
+            System.out.println("Всего високосных лет: " + leapCount);
+            System.out.println("Доля високосных лет: " + 
+                             String.format("%.1f", leapCount * 100.0 / (endYear - startYear + 1)) + "%");
+            
+        } catch (InputMismatchException e) {
+            System.out.println("Ошибка: введите целое число");
+            scanner.nextLine(); // очистка буфера
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ошибка: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Показать историю проверок
+     */
+    public static void showHistory() {
+        if (history.isEmpty()) {
+            System.out.println("\nИстория проверок пуста.");
+            return;
+        }
+        
+        System.out.println("\n" + "═".repeat(50));
+        System.out.println("ИСТОРИЯ ПРОВЕРОК ВИСОКОСНЫХ ЛЕТ");
+        System.out.println("═".repeat(50));
+        
+        for (int i = 0; i < history.size(); i++) {
+            System.out.println((i + 1) + ". " + history.get(i));
+        }
+        
+        // Статистика
+        long leapCount = history.stream().filter(YearCheck::isLeap).count();
+        System.out.println("\nСтатистика:");
+        System.out.println("  Всего проверок: " + history.size());
+        System.out.println("  Високосных: " + leapCount + 
+                         " (" + String.format("%.1f", leapCount * 100.0 / history.size()) + "%)");
+        System.out.println("  Не високосных: " + (history.size() - leapCount));
+    }
+    
+    /**
+     * Очистить историю
+     */
+    public static void clearHistory() {
+        history.clear();
+        System.out.println("\nИстория проверок очищена.");
+    }
+    
+    /**
+     * Информация о високосных годах
+     */
+    public static void showInfo() {
+        System.out.println("\n" + "═".repeat(60));
+        System.out.println("ИНФОРМАЦИЯ О ВИСОКОСНЫХ ГОДАХ");
+        System.out.println("═".repeat(60));
+        
+        System.out.println("\nПРАВИЛА ОПРЕДЕЛЕНИЯ ВИСОКОСНОГО ГОДА:");
+        System.out.println("  1. Год делится на 400 → ВИСОКОСНЫЙ");
+        System.out.println("  2. Год делится на 100 → НЕ високосный");
+        System.out.println("  3. Год делится на 4 → ВИСОКОСНЫЙ");
+        System.out.println("  4. Во всех остальных случаях → НЕ високосный");
+        
+        System.out.println("\nПРИМЕРЫ:");
+        System.out.println("  • 2000 год: делится на 400 → ВИСОКОСНЫЙ");
+        System.out.println("  • 1900 год: делится на 100, но не на 400 → НЕ високосный");
+        System.out.println("  • 2024 год: делится на 4, не делится на 100 → ВИСОКОСНЫЙ");
+        System.out.println("  • 2023 год: не делится на 4 → НЕ високосный");
+        
+        System.out.println("\nИСТОРИЧЕСКАЯ СПРАВКА:");
+        System.out.println("  • Високосный год введен в 46 г. до н.э. Юлием Цезарем");
+        System.out.println("  • Григорианский календарь (современный) введен в 1582 году");
+        System.out.println("  • Правило 'делится на 400' исправляет ошибку в 3 дня за 400 лет");
+        
+        System.out.println("\nИНТЕРЕСНЫЕ ФАКТЫ:");
+        System.out.println("  • 29 февраля называется 'високосным днем'");
+        System.out.println("  • Люди, родившиеся 29 февраля, празднуют день рождения раз в 4 года");
+        System.out.println("  • В среднем високосные годы составляют 24.25% всех лет");
+        
+        System.out.println("\nСПЕЦИАЛЬНЫЕ СЛУЧАИ:");
+        System.out.println("  • Год 0 не существует в григорианском календаре");
+        System.out.println("  • 2100, 2200, 2300 годы НЕ будут високосными");
+        System.out.println("  • 2400 год БУДЕТ високосным");
+    }
+    
+    /**
+     * Проверка нескольких тестовых случаев
+     */
+    public static void runTestCases() {
+        System.out.println("\n" + "═".repeat(50));
+        System.out.println("ТЕСТОВЫЕ ПРИМЕРЫ");
+        System.out.println("═".repeat(50));
+        
+        int[] testYears = {
+            2000,  // високосный (делится на 400)
+            1900,  // не високосный (делится на 100, но не на 400)
+            2024,  // високосный (делится на 4, не на 100)
+            2023,  // не високосный
+            1600,  // високосный
+            1700,  // не високосный
+            1800,  // не високосный
+            2400,  // високосный
+            2100,  // не високосный
+            1,     // не високосный (первый год нашей эры)
+            4,     // високосный
+            100,   // не високосный
+            400    // високосный
+        };
+        
+        System.out.printf("%-8s %-15s %-15s\n", "Год", "Ожидается", "Результат");
+        System.out.println("-".repeat(40));
+        
+        for (int year : testYears) {
+            boolean expected = isLeapYear(year);
+            boolean actual = isLeapYearAlt(year);
+            String status = expected == actual ? "✓" : "✗";
+            
+            System.out.printf("%-8d %-15s %-15s %s\n", 
+                            year,
+                            expected ? "високосный" : "не високосный",
+                            actual ? "високосный" : "не високосный",
+                            status);
+        }
+    }
+    
+    /**
+     * Основное меню программы
+     */
+    public static void main(String[] args) {
+        System.out.println("╔══════════════════════════════════════════╗");
+        System.out.println("║      ПРОВЕРКА ВИСОКОСНЫХ ЛЕТ v1.0        ║");
+        System.out.println("╚══════════════════════════════════════════╝");
+        
+        while (true) {
+            printMenu();
+            String choice = scanner.nextLine();
+            
+            switch (choice) {
+                case "1":
+                    checkUserInputYear();
+                    break;
+                case "2":
+                    checkYearRange();
+                    break;
+                case "3":
+                    showHistory();
+                    break;
+                case "4":
+                    runTestCases();
+                    break;
+                case "5":
+                    showInfo();
+                    break;
+                case "6":
+                    clearHistory();
+                    break;
+                case "0":
+                    System.out.println("\nСпасибо за использование программы!");
+                    scanner.close();
+                    return;
+                default:
+                    System.out.println("Неверный выбор. Попробуйте снова.");
+            }
+            
+            System.out.println("\nНажмите Enter для продолжения...");
+            scanner.nextLine();
+        }
+    }
+    
+    private static void printMenu() {
+        System.out.println("\n" + "═".repeat(50));
+        System.out.println("ГЛАВНОЕ МЕНЮ:");
+        System.out.println("1. Проверить конкретный год");
+        System.out.println("2. Проверить диапазон лет");
+        System.out.println("3. Показать историю проверок");
+        System.out.println("4. Запустить тестовые примеры");
+        System.out.println("5. Информация о високосных годах");
+        System.out.println("6. Очистить историю");
+        System.out.println("0. Выход");
+        System.out.print("Выберите опцию: ");
+    }
+}
