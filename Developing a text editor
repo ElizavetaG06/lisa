@@ -1,0 +1,358 @@
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+
+public class TextEditor extends JFrame {
+    
+    private JTextArea textArea;
+    private JFileChooser fileChooser;
+    private File currentFile;
+    
+    public TextEditor() {
+        // Настройка главного окна
+        setTitle("Текстовый редактор");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        
+        // Создание компонентов
+        createComponents();
+        
+        setVisible(true);
+    }
+    
+    private void createComponents() {
+        // Создаем текстовую область с прокруткой
+        textArea = new JTextArea();
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        
+        // Создаем меню
+        createMenuBar();
+        
+        // Добавляем компоненты на форму
+        add(scrollPane, BorderLayout.CENTER);
+        
+        // Инициализируем файловый диалог
+        fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Текстовые файлы (*.txt)", "txt"));
+        
+        // Добавляем слушатель для проверки сохранения перед закрытием
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                checkSaveBeforeExit();
+            }
+        });
+    }
+    
+    private void createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        
+        // Меню "Файл"
+        JMenu fileMenu = new JMenu("Файл");
+        
+        JMenuItem newItem = new JMenuItem("Новый");
+        JMenuItem openItem = new JMenuItem("Открыть...");
+        JMenuItem saveItem = new JMenuItem("Сохранить");
+        JMenuItem saveAsItem = new JMenuItem("Сохранить как...");
+        JMenuItem exitItem = new JMenuItem("Выход");
+        
+        // Устанавливаем горячие клавиши
+        newItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK));
+        openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        saveAsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, 
+            InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
+        exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
+        
+        // Добавляем слушатели
+        newItem.addActionListener(e -> newFile());
+        openItem.addActionListener(e -> openFile());
+        saveItem.addActionListener(e -> saveFile());
+        saveAsItem.addActionListener(e -> saveFileAs());
+        exitItem.addActionListener(e -> exitApplication());
+        
+        fileMenu.add(newItem);
+        fileMenu.add(openItem);
+        fileMenu.addSeparator();
+        fileMenu.add(saveItem);
+        fileMenu.add(saveAsItem);
+        fileMenu.addSeparator();
+        fileMenu.add(exitItem);
+        
+        // Меню "Правка"
+        JMenu editMenu = new JMenu("Правка");
+        
+        JMenuItem cutItem = new JMenuItem("Вырезать");
+        JMenuItem copyItem = new JMenuItem("Копировать");
+        JMenuItem pasteItem = new JMenuItem("Вставить");
+        JMenuItem selectAllItem = new JMenuItem("Выделить все");
+        
+        // Устанавливаем горячие клавиши
+        cutItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_DOWN_MASK));
+        copyItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_DOWN_MASK));
+        pasteItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_DOWN_MASK));
+        selectAllItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_DOWN_MASK));
+        
+        // Добавляем слушатели
+        cutItem.addActionListener(e -> textArea.cut());
+        copyItem.addActionListener(e -> textArea.copy());
+        pasteItem.addActionListener(e -> textArea.paste());
+        selectAllItem.addActionListener(e -> textArea.selectAll());
+        
+        editMenu.add(cutItem);
+        editMenu.add(copyItem);
+        editMenu.add(pasteItem);
+        editMenu.addSeparator();
+        editMenu.add(selectAllItem);
+        
+        // Меню "Вид"
+        JMenu viewMenu = new JMenu("Вид");
+        
+        JMenuItem zoomInItem = new JMenuItem("Увеличить шрифт");
+        JMenuItem zoomOutItem = new JMenuItem("Уменьшить шрифт");
+        JMenuItem resetZoomItem = new JMenuItem("Сбросить размер шрифта");
+        
+        zoomInItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, InputEvent.CTRL_DOWN_MASK));
+        zoomOutItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK));
+        resetZoomItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK));
+        
+        zoomInItem.addActionListener(e -> changeFontSize(1));
+        zoomOutItem.addActionListener(e -> changeFontSize(-1));
+        resetZoomItem.addActionListener(e -> resetFontSize());
+        
+        viewMenu.add(zoomInItem);
+        viewMenu.add(zoomOutItem);
+        viewMenu.add(resetZoomItem);
+        
+        // Меню "Справка"
+        JMenu helpMenu = new JMenu("Справка");
+        
+        JMenuItem aboutItem = new JMenuItem("О программе");
+        aboutItem.addActionListener(e -> showAboutDialog());
+        
+        helpMenu.add(aboutItem);
+        
+        // Добавляем все меню в менюбар
+        menuBar.add(fileMenu);
+        menuBar.add(editMenu);
+        menuBar.add(viewMenu);
+        menuBar.add(helpMenu);
+        
+        setJMenuBar(menuBar);
+    }
+    
+    private void newFile() {
+        if (checkSaveBeforeAction()) {
+            textArea.setText("");
+            currentFile = null;
+            setTitle("Текстовый редактор - Новый файл");
+        }
+    }
+    
+    private void openFile() {
+        if (!checkSaveBeforeAction()) {
+            return;
+        }
+        
+        int returnValue = fileChooser.showOpenDialog(this);
+        
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            loadFile(file);
+        }
+    }
+    
+    private void loadFile(File file) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            StringBuilder content = new StringBuilder();
+            String line;
+            
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+            
+            textArea.setText(content.toString());
+            currentFile = file;
+            setTitle("Текстовый редактор - " + file.getName());
+            
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this,
+                "Ошибка при открытии файла: " + e.getMessage(),
+                "Ошибка",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void saveFile() {
+        if (currentFile == null) {
+            saveFileAs();
+        } else {
+            saveToFile(currentFile);
+        }
+    }
+    
+    private void saveFileAs() {
+        int returnValue = fileChooser.showSaveDialog(this);
+        
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            
+            // Добавляем расширение .txt если его нет
+            if (!file.getName().toLowerCase().endsWith(".txt")) {
+                file = new File(file.getAbsolutePath() + ".txt");
+            }
+            
+            // Проверяем, существует ли файл
+            if (file.exists()) {
+                int response = JOptionPane.showConfirmDialog(this,
+                    "Файл уже существует. Перезаписать?",
+                    "Подтверждение",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+                
+                if (response != JOptionPane.YES_OPTION) {
+                    return;
+                }
+            }
+            
+            saveToFile(file);
+        }
+    }
+    
+    private void saveToFile(File file) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.write(textArea.getText());
+            currentFile = file;
+            setTitle("Текстовый редактор - " + file.getName());
+            
+            JOptionPane.showMessageDialog(this,
+                "Файл успешно сохранен: " + file.getName(),
+                "Сохранение",
+                JOptionPane.INFORMATION_MESSAGE);
+            
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this,
+                "Ошибка при сохранении файла: " + e.getMessage(),
+                "Ошибка",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private boolean checkSaveBeforeAction() {
+        if (textArea.getText().trim().isEmpty()) {
+            return true;
+        }
+        
+        if (currentFile == null || hasUnsavedChanges()) {
+            int response = JOptionPane.showConfirmDialog(this,
+                "Сохранить изменения перед продолжением?",
+                "Сохранение",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+            
+            if (response == JOptionPane.YES_OPTION) {
+                saveFile();
+                return true;
+            } else if (response == JOptionPane.NO_OPTION) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    private void checkSaveBeforeExit() {
+        if (textArea.getText().trim().isEmpty()) {
+            return;
+        }
+        
+        if (currentFile == null || hasUnsavedChanges()) {
+            int response = JOptionPane.showConfirmDialog(this,
+                "Сохранить изменения перед выходом?",
+                "Сохранение",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+            
+            if (response == JOptionPane.YES_OPTION) {
+                saveFile();
+                dispose();
+            } else if (response == JOptionPane.NO_OPTION) {
+                dispose();
+            }
+            // Если CANCEL - ничего не делаем, окно не закрывается
+        } else {
+            dispose();
+        }
+    }
+    
+    private boolean hasUnsavedChanges() {
+        if (currentFile == null) {
+            return !textArea.getText().trim().isEmpty();
+        }
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(currentFile))) {
+            StringBuilder fileContent = new StringBuilder();
+            String line;
+            
+            while ((line = reader.readLine()) != null) {
+                fileContent.append(line).append("\n");
+            }
+            
+            return !textArea.getText().equals(fileContent.toString());
+            
+        } catch (IOException e) {
+            return true;
+        }
+    }
+    
+    private void changeFontSize(int delta) {
+        Font currentFont = textArea.getFont();
+        int newSize = currentFont.getSize() + delta;
+        
+        if (newSize >= 8 && newSize <= 72) {
+            textArea.setFont(new Font(currentFont.getName(), currentFont.getStyle(), newSize));
+        }
+    }
+    
+    private void resetFontSize() {
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+    }
+    
+    private void showAboutDialog() {
+        JOptionPane.showMessageDialog(this,
+            "Текстовый редактор v1.0\n\n" +
+            "Простой текстовый редактор на Java Swing\n" +
+            "Поддерживает основные операции с файлами\n\n" +
+            "© 2024",
+            "О программе",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void exitApplication() {
+        checkSaveBeforeExit();
+    }
+    
+    public static void main(String[] args) {
+        // Запускаем в Event Dispatch Thread
+        SwingUtilities.invokeLater(() -> {
+            try {
+                // Устанавливаем системный Look and Feel
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
+            new TextEditor();
+        });
+    }
+}
