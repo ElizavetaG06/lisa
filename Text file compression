@@ -1,0 +1,134 @@
+import java.io.*;
+import java.util.zip.*;
+import java.nio.file.*;
+
+public class FileCompressionSystem {
+    
+    // Метод для сжатия файла
+    public static void compressFile(String sourceFile, String compressedFile) throws IOException {
+        try (FileInputStream fis = new FileInputStream(sourceFile);
+             FileOutputStream fos = new FileOutputStream(compressedFile);
+             GZIPOutputStream gzipOS = new GZIPOutputStream(fos)) {
+            
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = fis.read(buffer)) != -1) {
+                gzipOS.write(buffer, 0, len);
+            }
+            
+            System.out.println("Файл сжат: " + compressedFile);
+            System.out.println("Исходный размер: " + new File(sourceFile).length() + " байт");
+            System.out.println("Сжатый размер: " + new File(compressedFile).length() + " байт");
+        }
+    }
+    
+    // Метод для восстановления сжатого файла
+    public static void decompressFile(String compressedFile, String restoredFile) throws IOException {
+        try (FileInputStream fis = new FileInputStream(compressedFile);
+             GZIPInputStream gzipIS = new GZIPInputStream(fis);
+             FileOutputStream fos = new FileOutputStream(restoredFile)) {
+            
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = gzipIS.read(buffer)) != -1) {
+                fos.write(buffer, 0, len);
+            }
+            
+            System.out.println("Файл восстановлен: " + restoredFile);
+            System.out.println("Размер восстановленного файла: " + new File(restoredFile).length() + " байт");
+        }
+    }
+    
+    // Альтернативная версия с использованием Run-Length Encoding (RLE)
+    public static class SimpleCompressor {
+        
+        // Простое сжатие RLE (для текстовых файлов)
+        public static void compressWithRLE(String inputFile, String outputFile) throws IOException {
+            try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+                 BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+                
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String compressedLine = rleCompress(line);
+                    writer.write(compressedLine);
+                    writer.newLine();
+                }
+            }
+        }
+        
+        // Восстановление из RLE
+        public static void decompressRLE(String inputFile, String outputFile) throws IOException {
+            try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+                 BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+                
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String decompressedLine = rleDecompress(line);
+                    writer.write(decompressedLine);
+                    writer.newLine();
+                }
+            }
+        }
+        
+        private static String rleCompress(String input) {
+            if (input == null || input.isEmpty()) {
+                return "";
+            }
+            
+            StringBuilder compressed = new StringBuilder();
+            int count = 1;
+            char prev = input.charAt(0);
+            
+            for (int i = 1; i < input.length(); i++) {
+                char current = input.charAt(i);
+                if (current == prev) {
+                    count++;
+                } else {
+                    if (count > 1) {
+                        compressed.append(prev).append(count);
+                    } else {
+                        compressed.append(prev);
+                    }
+                    count = 1;
+                    prev = current;
+                }
+            }
+            
+            // Добавляем последний символ
+            if (count > 1) {
+                compressed.append(prev).append(count);
+            } else {
+                compressed.append(prev);
+            }
+            
+            return compressed.toString();
+        }
+        
+        private static String rleDecompress(String input) {
+            StringBuilder decompressed = new StringBuilder();
+            int i = 0;
+            
+            while (i < input.length()) {
+                char ch = input.charAt(i);
+                i++;
+                
+                // Проверяем, есть ли число после символа
+                if (i < input.length() && Character.isDigit(input.charAt(i))) {
+                    StringBuilder number = new StringBuilder();
+                    while (i < input.length() && Character.isDigit(input.charAt(i))) {
+                        number.append(input.charAt(i));
+                        i++;
+                    }
+                    int count = Integer.parseInt(number.toString());
+                    for (int j = 0; j < count; j++) {
+                        decompressed.append(ch);
+                    }
+                } else {
+                    decompressed.append(ch);
+                }
+            }
+            
+            return decompressed.toString();
+        }
+    }
+}
