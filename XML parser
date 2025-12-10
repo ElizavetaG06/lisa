@@ -1,0 +1,595 @@
+import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeSelectionModel;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.Stack;
+
+public class XMLParser extends JFrame {
+    
+    private JTree xmlTree;
+    private DefaultTreeModel treeModel;
+    private JTextArea xmlContentArea;
+    private JFileChooser fileChooser;
+    
+    public XMLParser() {
+        setTitle("XML Parser with JTree");
+        setSize(1000, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        
+        initComponents();
+        setVisible(true);
+    }
+    
+    private void initComponents() {
+        // Создаем главный контейнер с разделителем
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane.setDividerLocation(400);
+        splitPane.setResizeWeight(0.5);
+        
+        // Панель для дерева
+        JPanel treePanel = createTreePanel();
+        
+        // Панель для отображения содержимого
+        JPanel contentPanel = createContentPanel();
+        
+        splitPane.setLeftComponent(treePanel);
+        splitPane.setRightComponent(contentPanel);
+        
+        // Создаем меню
+        createMenuBar();
+        
+        // Инициализируем файловый диалог
+        fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("XML Files", "xml"));
+        
+        // Добавляем разделитель в центр
+        add(splitPane, BorderLayout.CENTER);
+        
+        // Добавляем статусбар
+        add(createStatusBar(), BorderLayout.SOUTH);
+    }
+    
+    private JPanel createTreePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // Создаем корневой узел дерева
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode("XML Structure");
+        treeModel = new DefaultTreeModel(root);
+        xmlTree = new JTree(treeModel);
+        
+        // Настраиваем отображение дерева
+        xmlTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        xmlTree.setShowsRootHandles(true);
+        xmlTree.setRootVisible(false);
+        
+        // Добавляем слушатель для отображения содержимого
+        xmlTree.addTreeSelectionListener(e -> {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) xmlTree.getLastSelectedPathComponent();
+            if (node != null && node.getUserObject() instanceof XMLNode) {
+                XMLNode xmlNode = (XMLNode) node.getUserObject();
+                displayNodeContent(xmlNode);
+            }
+        });
+        
+        // Добавляем дерево в панель с прокруткой
+        JScrollPane scrollPane = new JScrollPane(xmlTree);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("XML Tree Structure"));
+        
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Добавляем кнопки управления
+        panel.add(createTreeButtons(), BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    private JPanel createTreeButtons() {
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        
+        JButton expandAllButton = new JButton("Развернуть все");
+        expandAllButton.addActionListener(e -> expandAllNodes());
+        
+        JButton collapseAllButton = new JButton("Свернуть все");
+        collapseAllButton.addActionListener(e -> collapseAllNodes());
+        
+        JButton refreshButton = new JButton("Обновить");
+        refreshButton.addActionListener(e -> refreshTree());
+        
+        buttonPanel.add(expandAllButton);
+        buttonPanel.add(collapseAllButton);
+        buttonPanel.add(refreshButton);
+        
+        return buttonPanel;
+    }
+    
+    private JPanel createContentPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        xmlContentArea = new JTextArea();
+        xmlContentArea.setEditable(false);
+        xmlContentArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        
+        JScrollPane scrollPane = new JScrollPane(xmlContentArea);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("XML Content"));
+        
+        // Панель для свойств узла
+        JPanel propertiesPanel = createPropertiesPanel();
+        
+        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(propertiesPanel, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    private JPanel createPropertiesPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Node Properties"));
+        panel.setPreferredSize(new Dimension(0, 150));
+        
+        JTextArea propertiesArea = new JTextArea();
+        propertiesArea.setEditable(false);
+        propertiesArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        
+        // Обновляем свойства при выборе узла
+        xmlTree.addTreeSelectionListener(e -> {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) xmlTree.getLastSelectedPathComponent();
+            if (node != null && node.getUserObject() instanceof XMLNode) {
+                XMLNode xmlNode = (XMLNode) node.getUserObject();
+                propertiesArea.setText(xmlNode.getProperties());
+            } else {
+                propertiesArea.setText("");
+            }
+        });
+        
+        JScrollPane scrollPane = new JScrollPane(propertiesArea);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private JPanel createStatusBar() {
+        JPanel statusBar = new JPanel(new BorderLayout());
+        statusBar.setBorder(BorderFactory.createEtchedBorder());
+        
+        JLabel statusLabel = new JLabel("Готово");
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+        
+        statusBar.add(statusLabel, BorderLayout.WEST);
+        
+        return statusBar;
+    }
+    
+    private void createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        
+        // Меню File
+        JMenu fileMenu = new JMenu("Файл");
+        
+        JMenuItem openItem = new JMenuItem("Открыть XML...");
+        openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
+        openItem.addActionListener(e -> openXMLFile());
+        
+        JMenuItem reloadItem = new JMenuItem("Перезагрузить");
+        reloadItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK));
+        reloadItem.addActionListener(e -> reloadCurrentFile());
+        
+        JMenuItem exitItem = new JMenuItem("Выход");
+        exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
+        exitItem.addActionListener(e -> System.exit(0));
+        
+        fileMenu.add(openItem);
+        fileMenu.add(reloadItem);
+        fileMenu.addSeparator();
+        fileMenu.add(exitItem);
+        
+        // Меню View
+        JMenu viewMenu = new JMenu("Вид");
+        
+        JMenuItem expandAllItem = new JMenuItem("Развернуть все узлы");
+        expandAllItem.addActionListener(e -> expandAllNodes());
+        
+        JMenuItem collapseAllItem = new JMenuItem("Свернуть все узлы");
+        collapseAllItem.addActionListener(e -> collapseAllNodes());
+        
+        viewMenu.add(expandAllItem);
+        viewMenu.add(collapseAllItem);
+        
+        // Меню Help
+        JMenu helpMenu = new JMenu("Справка");
+        
+        JMenuItem aboutItem = new JMenuItem("О программе");
+        aboutItem.addActionListener(e -> showAboutDialog());
+        
+        helpMenu.add(aboutItem);
+        
+        menuBar.add(fileMenu);
+        menuBar.add(viewMenu);
+        menuBar.add(helpMenu);
+        
+        setJMenuBar(menuBar);
+    }
+    
+    private void openXMLFile() {
+        int returnValue = fileChooser.showOpenDialog(this);
+        
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File xmlFile = fileChooser.getSelectedFile();
+            parseXMLFile(xmlFile);
+        }
+    }
+    
+    private void reloadCurrentFile() {
+        if (fileChooser.getSelectedFile() != null) {
+            parseXMLFile(fileChooser.getSelectedFile());
+        }
+    }
+    
+    private void parseXMLFile(File xmlFile) {
+        try {
+            String xmlContent = readFile(xmlFile);
+            DefaultMutableTreeNode rootNode = parseXML(xmlContent);
+            
+            // Обновляем модель дерева
+            treeModel.setRoot(rootNode);
+            
+            // Обновляем заголовок окна
+            setTitle("XML Parser - " + xmlFile.getName());
+            
+            // Разворачиваем первый уровень
+            expandFirstLevel();
+            
+            // Отображаем полное содержимое XML
+            xmlContentArea.setText(xmlContent);
+            
+            JOptionPane.showMessageDialog(this,
+                "XML файл успешно загружен!\n" +
+                "Найдено узлов: " + countNodes(rootNode),
+                "Успех",
+                JOptionPane.INFORMATION_MESSAGE);
+                
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this,
+                "Ошибка при чтении файла: " + e.getMessage(),
+                "Ошибка",
+                JOptionPane.ERROR_MESSAGE);
+        } catch (XMLParseException e) {
+            JOptionPane.showMessageDialog(this,
+                "Ошибка при парсинге XML: " + e.getMessage(),
+                "Ошибка парсинга",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private String readFile(File file) throws IOException {
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+        }
+        return content.toString();
+    }
+    
+    private DefaultMutableTreeNode parseXML(String xmlContent) throws XMLParseException {
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(new XMLNode("XML Document", 0, 0));
+        
+        Stack<DefaultMutableTreeNode> nodeStack = new Stack<>();
+        nodeStack.push(root);
+        
+        int pos = 0;
+        int line = 1;
+        int column = 1;
+        
+        while (pos < xmlContent.length()) {
+            // Пропускаем пробелы и переносы строк
+            while (pos < xmlContent.length() && Character.isWhitespace(xmlContent.charAt(pos))) {
+                if (xmlContent.charAt(pos) == '\n') {
+                    line++;
+                    column = 1;
+                } else {
+                    column++;
+                }
+                pos++;
+            }
+            
+            if (pos >= xmlContent.length()) break;
+            
+            // Ищем начало тега
+            if (xmlContent.charAt(pos) == '<') {
+                int startPos = pos;
+                int startLine = line;
+                int startColumn = column;
+                
+                pos++;
+                column++;
+                
+                // Проверяем, является ли это закрывающим тегом
+                boolean isClosingTag = false;
+                if (pos < xmlContent.length() && xmlContent.charAt(pos) == '/') {
+                    isClosingTag = true;
+                    pos++;
+                    column++;
+                }
+                
+                // Ищем имя тега
+                int tagStart = pos;
+                while (pos < xmlContent.length() && 
+                       !Character.isWhitespace(xmlContent.charAt(pos)) && 
+                       xmlContent.charAt(pos) != '>' && 
+                       xmlContent.charAt(pos) != '/') {
+                    pos++;
+                    column++;
+                }
+                
+                if (pos >= xmlContent.length()) {
+                    throw new XMLParseException("Незавершенный тег", line, column);
+                }
+                
+                String tagName = xmlContent.substring(tagStart, pos);
+                
+                // Пропускаем пробелы внутри тега
+                while (pos < xmlContent.length() && 
+                       xmlContent.charAt(pos) != '>' && 
+                       xmlContent.charAt(pos) != '/') {
+                    pos++;
+                    column++;
+                }
+                
+                // Проверяем самозакрывающийся тег
+                boolean isSelfClosing = false;
+                if (pos < xmlContent.length() && xmlContent.charAt(pos) == '/') {
+                    isSelfClosing = true;
+                    pos++;
+                    column++;
+                }
+                
+                // Должен быть закрывающий '>'
+                if (pos >= xmlContent.length() || xmlContent.charAt(pos) != '>') {
+                    throw new XMLParseException("Ожидается '>'", line, column);
+                }
+                
+                pos++;
+                column++;
+                
+                if (!isClosingTag) {
+                    // Создаем новый узел
+                    XMLNode xmlNode = new XMLNode(tagName, startLine, startColumn);
+                    DefaultMutableTreeNode treeNode = new DefaultMutableTreeNode(xmlNode);
+                    
+                    // Добавляем к текущему родителю
+                    nodeStack.peek().add(treeNode);
+                    
+                    if (!isSelfClosing) {
+                        // Если это не самозакрывающийся тег, добавляем в стек
+                        nodeStack.push(treeNode);
+                    }
+                } else {
+                    // Закрывающий тег
+                    if (nodeStack.isEmpty() || !((XMLNode) nodeStack.peek().getUserObject()).getName().equals(tagName)) {
+                        throw new XMLParseException("Несоответствие тегов: ожидается закрытие " + 
+                            (nodeStack.isEmpty() ? "?" : ((XMLNode) nodeStack.peek().getUserObject()).getName()) + 
+                            ", найдено " + tagName, line, column);
+                    }
+                    nodeStack.pop();
+                }
+                
+                // Запоминаем позицию конца тега
+                if (!nodeStack.isEmpty()) {
+                    XMLNode currentNode = (XMLNode) nodeStack.peek().getUserObject();
+                    currentNode.setEndPosition(line, column);
+                }
+                
+            } else {
+                // Текстовое содержимое
+                int startPos = pos;
+                int startLine = line;
+                int startColumn = column;
+                
+                while (pos < xmlContent.length() && xmlContent.charAt(pos) != '<') {
+                    if (xmlContent.charAt(pos) == '\n') {
+                        line++;
+                        column = 1;
+                    } else {
+                        column++;
+                    }
+                    pos++;
+                }
+                
+                String textContent = xmlContent.substring(startPos, pos).trim();
+                if (!textContent.isEmpty()) {
+                    XMLNode textNode = new XMLNode("#text", startLine, startColumn);
+                    textNode.setContent(textContent);
+                    DefaultMutableTreeNode treeNode = new DefaultMutableTreeNode(textNode);
+                    nodeStack.peek().add(treeNode);
+                }
+            }
+        }
+        
+        if (nodeStack.size() > 1) {
+            throw new XMLParseException("Не все теги закрыты", line, column);
+        }
+        
+        return root;
+    }
+    
+    private void displayNodeContent(XMLNode node) {
+        StringBuilder content = new StringBuilder();
+        
+        content.append("Имя узла: ").append(node.getName()).append("\n");
+        content.append("Позиция: строка ").append(node.getLine()).append(", столбец ").append(node.getColumn()).append("\n");
+        
+        if (node.getEndLine() > 0) {
+            content.append("Конец: строка ").append(node.getEndLine()).append(", столбец ").append(node.getEndColumn()).append("\n");
+        }
+        
+        if (node.getContent() != null) {
+            content.append("\nСодержимое:\n");
+            content.append(node.getContent());
+        }
+        
+        xmlContentArea.setText(content.toString());
+    }
+    
+    private void expandAllNodes() {
+        for (int i = 0; i < xmlTree.getRowCount(); i++) {
+            xmlTree.expandRow(i);
+        }
+    }
+    
+    private void collapseAllNodes() {
+        for (int i = xmlTree.getRowCount() - 1; i >= 0; i--) {
+            xmlTree.collapseRow(i);
+        }
+    }
+    
+    private void expandFirstLevel() {
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) treeModel.getRoot();
+        if (root != null) {
+            for (int i = 0; i < root.getChildCount(); i++) {
+                xmlTree.expandRow(i + 1); // +1 потому что корень невидим
+            }
+        }
+    }
+    
+    private void refreshTree() {
+        if (fileChooser.getSelectedFile() != null) {
+            reloadCurrentFile();
+        }
+    }
+    
+    private int countNodes(DefaultMutableTreeNode node) {
+        int count = 0;
+        for (int i = 0; i < node.getChildCount(); i++) {
+            count += countNodes((DefaultMutableTreeNode) node.getChildAt(i));
+        }
+        return count + 1;
+    }
+    
+    private void showAboutDialog() {
+        JOptionPane.showMessageDialog(this,
+            "XML Parser with JTree\n" +
+            "Версия 1.0\n\n" +
+            "Парсер XML файлов без параметров тегов.\n" +
+            "Отображает структуру XML в виде дерева.\n\n" +
+            "© 2024",
+            "О программе",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            new XMLParser();
+        });
+    }
+}
+
+// Класс для представления XML узла
+class XMLNode {
+    private String name;
+    private String content;
+    private int line;
+    private int column;
+    private int endLine;
+    private int endColumn;
+    
+    public XMLNode(String name, int line, int column) {
+        this.name = name;
+        this.line = line;
+        this.column = column;
+        this.endLine = 0;
+        this.endColumn = 0;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public String getContent() {
+        return content;
+    }
+    
+    public void setContent(String content) {
+        this.content = content;
+    }
+    
+    public int getLine() {
+        return line;
+    }
+    
+    public int getColumn() {
+        return column;
+    }
+    
+    public int getEndLine() {
+        return endLine;
+    }
+    
+    public int getEndColumn() {
+        return endColumn;
+    }
+    
+    public void setEndPosition(int endLine, int endColumn) {
+        this.endLine = endLine;
+        this.endColumn = endColumn;
+    }
+    
+    public String getProperties() {
+        StringBuilder props = new StringBuilder();
+        props.append("Тип: ").append(name.equals("#text") ? "Текстовый узел" : "Элемент").append("\n");
+        props.append("Имя: ").append(name).append("\n");
+        props.append("Начало: строка ").append(line).append(", столбец ").append(column).append("\n");
+        
+        if (endLine > 0) {
+            props.append("Конец: строка ").append(endLine).append(", столбец ").append(endColumn).append("\n");
+        }
+        
+        if (content != null) {
+            props.append("Длина текста: ").append(content.length()).append(" символов\n");
+        }
+        
+        return props.toString();
+    }
+    
+    @Override
+    public String toString() {
+        if (name.equals("#text")) {
+            String text = content != null ? content : "";
+            if (text.length() > 20) {
+                text = text.substring(0, 20) + "...";
+            }
+            return "#text: \"" + text + "\"";
+        }
+        return name;
+    }
+}
+
+// Класс исключения для ошибок парсинга
+class XMLParseException extends Exception {
+    private int line;
+    private int column;
+    
+    public XMLParseException(String message, int line, int column) {
+        super(message + " (строка: " + line + ", столбец: " + column + ")");
+        this.line = line;
+        this.column = column;
+    }
+    
+    public int getLine() {
+        return line;
+    }
+    
+    public int getColumn() {
+        return column;
+    }
+}
