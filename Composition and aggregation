@@ -1,0 +1,337 @@
+import java.util.ArrayList;
+import java.util.List;
+
+// ==================== КОМПОЗИЦИЯ (Composition) ====================
+// Композиция: часть не может существовать без целого, сильная связь
+// Жизненный цикл частей управляется целым
+
+// Части дома (не существуют отдельно от дома)
+class Room {
+    private String name;
+    
+    public Room(String name) {
+        this.name = name;
+        System.out.println("Создана комната: " + name);
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void clean() {
+        System.out.println("Комната " + name + " убрана");
+    }
+    
+    @Override
+    public String toString() {
+        return name;
+    }
+}
+
+class Roof {
+    private String material;
+    
+    public Roof(String material) {
+        this.material = material;
+        System.out.println("Создана крыша из материала: " + material);
+    }
+    
+    public void protect() {
+        System.out.println("Крыша защищает от дождя");
+    }
+    
+    @Override
+    public String toString() {
+        return "крыша из " + material;
+    }
+}
+
+class House {
+    // КОМПОЗИЦИЯ: комнаты создаются и уничтожаются вместе с домом
+    private List<Room> rooms;        // Композиция - список комнат
+    private Roof roof;               // Композиция - крыша
+    
+    public House(int roomCount, String roofMaterial) {
+        // Создаем объекты-части ВНУТРИ конструктора целого
+        rooms = new ArrayList<>();
+        for (int i = 1; i <= roomCount; i++) {
+            rooms.add(new Room("Комната " + i));  // Комната не существует без дома
+        }
+        
+        roof = new Roof(roofMaterial);  // Крыша не существует без дома
+        
+        System.out.println("Дом построен с " + roomCount + " комнатами");
+    }
+    
+    public void showHouse() {
+        System.out.println("Это дом состоит из:");
+        System.out.println("  - " + roof);
+        for (Room room : rooms) {
+            System.out.println("  - " + room);
+        }
+    }
+    
+    public void destroyHouse() {
+        System.out.println("Дом разрушается...");
+        rooms.clear();  // Комнаты уничтожаются вместе с домом
+        roof = null;    // Крыша уничтожается вместе с домом
+        System.out.println("Дом и все его части уничтожены");
+    }
+    
+    // Геттеры для демонстрации
+    public List<Room> getRooms() {
+        return new ArrayList<>(rooms); // Возвращаем копию для безопасности
+    }
+    
+    public Roof getRoof() {
+        return roof;
+    }
+}
+
+// ==================== АГРЕГАЦИЯ (Aggregation) ====================
+// Агрегация: часть может существовать отдельно от целого, слабая связь
+// Жизненные циклы не зависят друг от друга
+
+class Engine {
+    private String model;
+    private int horsepower;
+    
+    public Engine(String model, int horsepower) {
+        this.model = model;
+        this.horsepower = horsepower;
+        System.out.println("Создан двигатель " + model + " (" + horsepower + " л.с.)");
+    }
+    
+    public void start() {
+        System.out.println("Двигатель " + model + " завелся: ВРРРРР!");
+    }
+    
+    @Override
+    public String toString() {
+        return model + " (" + horsepower + " л.с.)";
+    }
+}
+
+class Wheel {
+    private String brand;
+    private int diameter;
+    
+    public Wheel(String brand, int diameter) {
+        this.brand = brand;
+        this.diameter = diameter;
+        System.out.println("Создано колесо " + brand + " диаметром " + diameter + " дюймов");
+    }
+    
+    public void rotate() {
+        System.out.println("Колесо " + brand + " вращается");
+    }
+    
+    @Override
+    public String toString() {
+        return brand + " " + diameter + " дюймов";
+    }
+}
+
+class Car {
+    // АГРЕГАЦИЯ: двигатель и колеса существуют отдельно от машины
+    private Engine engine;          // Агрегация - двигатель
+    private List<Wheel> wheels;     // Агрегация - колеса
+    private String model;
+    
+    // Конструктор принимает уже созданные объекты
+    public Car(String model, Engine engine, List<Wheel> wheels) {
+        this.model = model;
+        this.engine = engine;      // Двигатель создан где-то еще
+        this.wheels = new ArrayList<>(wheels);  // Колеса созданы где-то еще
+        
+        System.out.println("Машина " + model + " собрана");
+    }
+    
+    public void drive() {
+        System.out.println("Машина " + model + " едет:");
+        engine.start();
+        for (Wheel wheel : wheels) {
+            wheel.rotate();
+        }
+    }
+    
+    public void showCar() {
+        System.out.println("Машина " + model + " состоит из:");
+        System.out.println("  - Двигатель: " + engine);
+        System.out.println("  - Колеса (" + wheels.size() + " шт.):");
+        for (Wheel wheel : wheels) {
+            System.out.println("    * " + wheel);
+        }
+    }
+    
+    public void replaceEngine(Engine newEngine) {
+        System.out.println("Замена двигателя в машине " + model);
+        this.engine = newEngine;  // Можем заменить двигатель
+    }
+    
+    public void removeWheels() {
+        System.out.println("Колеса сняты с машины " + model);
+        wheels.clear();  // Колеса продолжают существовать где-то еще
+    }
+    
+    // Геттеры
+    public Engine getEngine() {
+        return engine;
+    }
+    
+    public List<Wheel> getWheels() {
+        return new ArrayList<>(wheels);
+    }
+}
+
+// ==================== ГЛУБОКИЙ ПРИМЕР С ОДНИМ КЛАССОМ ====================
+// Показываем разницу в жизненном цикле
+
+class Student {
+    private String name;
+    
+    public Student(String name) {
+        this.name = name;
+    }
+    
+    @Override
+    public String toString() {
+        return name;
+    }
+}
+
+class University {
+    // АГРЕГАЦИЯ: студенты существуют независимо от университета
+    private List<Student> students;
+    private String name;
+    
+    public University(String name) {
+        this.name = name;
+        this.students = new ArrayList<>();
+        System.out.println("Университет " + name + " создан");
+    }
+    
+    // Студенты добавляются извне
+    public void enrollStudent(Student student) {
+        students.add(student);
+        System.out.println(student + " зачислен в " + name);
+    }
+    
+    // Студенты могут быть удалены, но продолжают существовать
+    public void expelStudent(Student student) {
+        students.remove(student);
+        System.out.println(student + " отчислен из " + name);
+    }
+    
+    @Override
+    public String toString() {
+        return name + " (студентов: " + students.size() + ")";
+    }
+}
+
+class Department {
+    // КОМПОЗИЦИЯ: отдел не существует без университета
+    private String name;
+    private University university;  // Обязательная связь
+    
+    public Department(String name, University university) {
+        this.name = name;
+        this.university = university;  // Департамент не может существовать без университета
+        System.out.println("Департамент " + name + " создан в " + university);
+    }
+    
+    @Override
+    public String toString() {
+        return name + " (в " + university + ")";
+    }
+}
+
+// ==================== ДЕМОНСТРАЦИЯ ====================
+
+public class CompositionAggregationDemo {
+    public static void main(String[] args) {
+        System.out.println("========== ДЕМОНСТРАЦИЯ КОМПОЗИЦИИ ==========\n");
+        
+        // КОМПОЗИЦИЯ: дом создает свои части сам
+        House myHouse = new House(3, "черепица");
+        myHouse.showHouse();
+        
+        // Комнаты не могут существовать без дома
+        List<Room> rooms = myHouse.getRooms();
+        System.out.println("Можно получить доступ к комнатам из дома, но они все еще часть дома");
+        
+        // При уничтожении дома уничтожаются и его части
+        myHouse.destroyHouse();
+        System.out.println("После разрушения дома, комнат больше не существует\n");
+        
+        System.out.println("========== ДЕМОНСТРАЦИЯ АГРЕГАЦИИ ==========\n");
+        
+        // АГРЕГАЦИЯ: сначала создаем части отдельно
+        Engine v8Engine = new Engine("V8 Turbo", 450);
+        
+        List<Wheel> wheels = new ArrayList<>();
+        for (int i = 1; i <= 4; i++) {
+            wheels.add(new Wheel("Michelin", 18));
+        }
+        
+        // Затем собираем машину из готовых частей
+        Car myCar = new Car("Tesla Model S", v8Engine, wheels);
+        myCar.showCar();
+        myCar.drive();
+        
+        // Части могут существовать отдельно от целого
+        System.out.println("\nДвигатель и колеса существуют независимо от машины:");
+        System.out.println("Двигатель: " + v8Engine);
+        System.out.println("Колеса: " + wheels.size() + " шт.");
+        
+        // Можем заменить двигатель
+        Engine electricEngine = new Engine("Electric 300kW", 400);
+        myCar.replaceEngine(electricEngine);
+        
+        // Можем снять колеса, и они все еще существуют
+        myCar.removeWheels();
+        System.out.println("Колеса после снятия с машины: " + wheels.size() + " шт.");
+        
+        System.out.println("\n========== СРАВНЕНИЕ НА ПРИМЕРЕ УНИВЕРСИТЕТА ==========\n");
+        
+        // Создаем студентов (они существуют независимо)
+        Student alice = new Student("Алиса");
+        Student bob = new Student("Боб");
+        Student charlie = new Student("Чарли");
+        
+        // Создаем университет
+        University university = new University("МГУ");
+        
+        // АГРЕГАЦИЯ: добавляем существующих студентов
+        university.enrollStudent(alice);
+        university.enrollStudent(bob);
+        
+        System.out.println("Студенты существуют независимо от университета:");
+        System.out.println("Алиса: " + alice + " (вне контекста университета)");
+        
+        // Студент может быть отчислен, но продолжает существовать
+        university.expelStudent(alice);
+        System.out.println("Алиса после отчисления: " + alice + " (все еще существует)");
+        
+        // КОМПОЗИЦИЯ: департамент не существует без университета
+        Department mathDept = new Department("Математический факультет", university);
+        System.out.println("Департамент: " + mathDept);
+        
+        // Что произойдет, если университет закроется?
+        System.out.println("\nЕсли университет закроется:");
+        System.out.println("- Студенты продолжат существовать (агрегация)");
+        System.out.println("- Департамент перестанет существовать (композиция)");
+        
+        System.out.println("\n========== ИТОГОВОЕ СРАВНЕНИЕ ==========");
+        System.out.println("КОМПОЗИЦИЯ (сильная связь):");
+        System.out.println("- Часть создается внутри целого");
+        System.out.println("- Часть не существует без целого");
+        System.out.println("- Часть уничтожается вместе с целым");
+        System.out.println("- Используется, когда связь обязательна и постоянна");
+        System.out.println("\nАГРЕГАЦИЯ (слабая связь):");
+        System.out.println("- Часть создается отдельно от целого");
+        System.out.println("- Часть может существовать без целого");
+        System.out.println("- Часть может переиспользоваться");
+        System.out.println("- Используется, когда связь необязательна или временна");
+    }
+}
