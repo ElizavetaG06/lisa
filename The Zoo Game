@@ -1,0 +1,889 @@
+// zoo/animals/interfaces/Flyable.java
+package zoo.animals.interfaces;
+
+public interface Flyable {
+    void fly();
+    double getFlightSpeed();
+    int getMaxFlightHeight();
+}
+
+// zoo/animals/interfaces/Swimmable.java
+package zoo.animals.interfaces;
+
+public interface Swimmable {
+    void swim();
+    double getSwimSpeed();
+    int getMaxDiveDepth();
+}
+
+// zoo/animals/interfaces/Runnable.java
+package zoo.animals.interfaces;
+
+public interface Runnable {
+    void run();
+    double getRunSpeed();
+    String getRunStyle();
+}
+// zoo/animals/Animal.java
+package zoo.animals;
+
+import zoo.food.Food;
+
+public abstract class Animal {
+    private String name;
+    private int age;
+    private double weight;
+    private String habitat;
+    private boolean isHungry;
+    
+    public Animal(String name, int age, double weight, String habitat) {
+        this.name = name;
+        this.age = age;
+        this.weight = weight;
+        this.habitat = habitat;
+        this.isHungry = true;
+    }
+    
+    // Абстрактные методы (должны быть реализованы в подклассах)
+    public abstract void makeSound();
+    public abstract void eat(Food food);
+    public abstract String getAnimalType();
+    
+    // Конкретные методы
+    public void sleep() {
+        System.out.println(name + " спит");
+    }
+    
+    public void wakeUp() {
+        System.out.println(name + " просыпается");
+    }
+    
+    // Геттеры и сеттеры
+    public String getName() { return name; }
+    public int getAge() { return age; }
+    public double getWeight() { return weight; }
+    public String getHabitat() { return habitat; }
+    public boolean isHungry() { return isHungry; }
+    
+    public void setHungry(boolean hungry) { isHungry = hungry; }
+    public void setWeight(double weight) { this.weight = weight; }
+    
+    @Override
+    public String toString() {
+        return String.format("%s [%s, возраст: %d, вес: %.1f кг, среда: %s]",
+            name, getAnimalType(), age, weight, habitat);
+    }
+}
+// zoo/animals/mammals/Mammal.java
+package zoo.animals.mammals;
+
+import zoo.animals.Animal;
+import zoo.food.Food;
+
+public abstract class Mammal extends Animal {
+    private int gestationPeriod; // период беременности в днях
+    private boolean hasFur;
+    
+    public Mammal(String name, int age, double weight, String habitat, 
+                  int gestationPeriod, boolean hasFur) {
+        super(name, age, weight, habitat);
+        this.gestationPeriod = gestationPeriod;
+        this.hasFur = hasFur;
+    }
+    
+    // Абстрактные методы для млекопитающих
+    public abstract void giveBirth();
+    
+    // Конкретные методы
+    public void nurse() {
+        System.out.println(getName() + " кормит детеныша молоком");
+    }
+    
+    // Геттеры
+    public int getGestationPeriod() { return gestationPeriod; }
+    public boolean hasFur() { return hasFur; }
+    
+    @Override
+    public String getAnimalType() {
+        return "Млекопитающее";
+    }
+}
+
+// zoo/animals/birds/Bird.java
+package zoo.animals.birds;
+
+import zoo.animals.Animal;
+import zoo.food.Food;
+import zoo.animals.interfaces.Flyable;
+
+public abstract class Bird extends Animal {
+    private double wingspan;
+    private String beakType;
+    
+    public Bird(String name, int age, double weight, String habitat, 
+                double wingspan, String beakType) {
+        super(name, age, weight, habitat);
+        this.wingspan = wingspan;
+        this.beakType = beakType;
+    }
+    
+    public abstract void layEggs();
+    
+    // Геттеры
+    public double getWingspan() { return wingspan; }
+    public String getBeakType() { return beakType; }
+    
+    @Override
+    public String getAnimalType() {
+        return "Птица";
+    }
+}
+
+// zoo/animals/reptiles/Reptile.java
+package zoo.animals.reptiles;
+
+import zoo.animals.Animal;
+import zoo.food.Food;
+
+public abstract class Reptile extends Animal {
+    private boolean isVenomous;
+    private String scaleType;
+    
+    public Reptile(String name, int age, double weight, String habitat, 
+                   boolean isVenomous, String scaleType) {
+        super(name, age, weight, habitat);
+        this.isVenomous = isVenomous;
+        this.scaleType = scaleType;
+    }
+    
+    public abstract void shedSkin();
+    
+    public void baskInSun() {
+        System.out.println(getName() + " греется на солнце");
+    }
+    
+    // Геттеры
+    public boolean isVenomous() { return isVenomous; }
+    public String getScaleType() { return scaleType; }
+    
+    @Override
+    public String getAnimalType() {
+        return "Рептилия";
+    }
+}
+// zoo/animals/mammals/Lion.java
+package zoo.animals.mammals;
+
+import zoo.food.Food;
+import zoo.food.Meat;
+import zoo.animals.interfaces.Runnable;
+
+public class Lion extends Mammal implements Runnable {
+    private double maneLength;
+    private String prideRole; // роль в прайде
+    
+    public Lion(String name, int age, double weight, double maneLength, String prideRole) {
+        super(name, age, weight, "Саванна", 110, true);
+        this.maneLength = maneLength;
+        this.prideRole = prideRole;
+    }
+    
+    @Override
+    public void makeSound() {
+        System.out.println(getName() + " рычит: РРРРР!");
+    }
+    
+    @Override
+    public void eat(Food food) {
+        if (food instanceof Meat) {
+            System.out.println(getName() + " ест мясо");
+            setHungry(false);
+            setWeight(getWeight() + 2.5);
+        } else {
+            System.out.println(getName() + " не ест " + food.getFoodType());
+        }
+    }
+    
+    @Override
+    public void giveBirth() {
+        System.out.println(getName() + " родила львенка");
+    }
+    
+    // Реализация Runnable
+    @Override
+    public void run() {
+        System.out.println(getName() + " бежит за добычей");
+    }
+    
+    @Override
+    public double getRunSpeed() {
+        return 80.0; // км/ч
+    }
+    
+    @Override
+    public String getRunStyle() {
+        return "Спринт с прыжками";
+    }
+    
+    // Специфичные методы льва
+    public void hunt() {
+        System.out.println(getName() + " охотится в саванне");
+    }
+    
+    @Override
+    public String toString() {
+        return super.toString() + String.format(", грива: %.1f см, роль: %s", 
+            maneLength, prideRole);
+    }
+}
+
+// zoo/animals/mammals/Elephant.java
+package zoo.animals.mammals;
+
+import zoo.food.Food;
+import zoo.food.Plant;
+import zoo.animals.interfaces.Runnable;
+import zoo.animals.interfaces.Swimmable;
+
+public class Elephant extends Mammal implements Runnable, Swimmable {
+    private double tuskLength;
+    private double trunkLength;
+    
+    public Elephant(String name, int age, double weight, double tuskLength, double trunkLength) {
+        super(name, age, weight, "Саванна/Лес", 660, false);
+        this.tuskLength = tuskLength;
+        this.trunkLength = trunkLength;
+    }
+    
+    @Override
+    public void makeSound() {
+        System.out.println(getName() + " трубит: УУУУУ!");
+    }
+    
+    @Override
+    public void eat(Food food) {
+        if (food instanceof Plant) {
+            System.out.println(getName() + " ест растения с помощью хобота");
+            setHungry(false);
+            setWeight(getWeight() + 50.0);
+        } else {
+            System.out.println(getName() + " не ест " + food.getFoodType());
+        }
+    }
+    
+    @Override
+    public void giveBirth() {
+        System.out.println(getName() + " родила слоненка весом 100 кг!");
+    }
+    
+    // Реализация Runnable
+    @Override
+    public void run() {
+        System.out.println(getName() + " тяжело бежит");
+    }
+    
+    @Override
+    public double getRunSpeed() {
+        return 25.0; // км/ч
+    }
+    
+    @Override
+    public String getRunStyle() {
+        return "Тяжелый бег";
+    }
+    
+    // Реализация Swimmable
+    @Override
+    public void swim() {
+        System.out.println(getName() + " плавает, используя хобот как трубку");
+    }
+    
+    @Override
+    public double getSwimSpeed() {
+        return 2.5; // км/ч
+    }
+    
+    @Override
+    public int getMaxDiveDepth() {
+        return 0; // Не ныряет
+    }
+    
+    // Специфичные методы слона
+    public void sprayWater() {
+        System.out.println(getName() + " обливается водой из хобота");
+    }
+}
+
+// zoo/animals/birds/Eagle.java
+package zoo.animals.birds;
+
+import zoo.food.Food;
+import zoo.food.Meat;
+import zoo.animals.interfaces.Flyable;
+
+public class Eagle extends Bird implements Flyable {
+    private double visualAcuity; // острота зрения
+    
+    public Eagle(String name, int age, double weight, double visualAcuity) {
+        super(name, age, weight, "Горы", 2.2, "Крючковатый");
+        this.visualAcuity = visualAcuity;
+    }
+    
+    @Override
+    public void makeSound() {
+        System.out.println(getName() + " кричит: КИИИИ-КИИИ!");
+    }
+    
+    @Override
+    public void eat(Food food) {
+        if (food instanceof Meat) {
+            System.out.println(getName() + " разрывает добычу когтями");
+            setHungry(false);
+            setWeight(getWeight() + 0.3);
+        } else {
+            System.out.println(getName() + " не ест " + food.getFoodType());
+        }
+    }
+    
+    @Override
+    public void layEggs() {
+        System.out.println(getName() + " откладывает 2 яйца в гнезде на скале");
+    }
+    
+    // Реализация Flyable
+    @Override
+    public void fly() {
+        System.out.println(getName() + " парит высоко в небе");
+    }
+    
+    @Override
+    public double getFlightSpeed() {
+        return 160.0; // км/ч
+    }
+    
+    @Override
+    public int getMaxFlightHeight() {
+        return 7000; // метров
+    }
+    
+    // Специфичные методы орла
+    public void spotPrey() {
+        System.out.println(getName() + " замечает добычу с расстояния " + 
+                          (visualAcuity * 1000) + " метров");
+    }
+}
+
+// zoo/animals/birds/Penguin.java
+package zoo.animals.birds;
+
+import zoo.food.Food;
+import zoo.food.Meat;
+import zoo.animals.interfaces.Swimmable;
+import zoo.animals.interfaces.Runnable;
+
+public class Penguin extends Bird implements Swimmable, Runnable {
+    private double swimmingSpeed;
+    
+    public Penguin(String name, int age, double weight, double swimmingSpeed) {
+        super(name, age, weight, "Антарктика", 0.3, "Острый");
+        this.swimmingSpeed = swimmingSpeed;
+    }
+    
+    @Override
+    public void makeSound() {
+        System.out.println(getName() + " кричит: КВЕ-КВЕ!");
+    }
+    
+    @Override
+    public void eat(Food food) {
+        if (food instanceof Meat) {
+            System.out.println(getName() + " ловит рыбу");
+            setHungry(false);
+            setWeight(getWeight() + 0.1);
+        } else {
+            System.out.println(getName() + " не ест " + food.getFoodType());
+        }
+    }
+    
+    @Override
+    public void layEggs() {
+        System.out.println(getName() + " откладывает яйцо, которое высиживает самец");
+    }
+    
+    // Реализация Swimmable
+    @Override
+    public void swim() {
+        System.out.println(getName() + " быстро плавает под водой");
+    }
+    
+    @Override
+    public double getSwimSpeed() {
+        return swimmingSpeed;
+    }
+    
+    @Override
+    public int getMaxDiveDepth() {
+        return 200; // метров
+    }
+    
+    // Реализация Runnable
+    @Override
+    public void run() {
+        System.out.println(getName() + " неуклюже бежит");
+    }
+    
+    @Override
+    public double getRunSpeed() {
+        return 2.0; // км/ч
+    }
+    
+    @Override
+    public String getRunStyle() {
+        return "Переваливание";
+    }
+    
+    public void slideOnBelly() {
+        System.out.println(getName() + " скользит на животе по льду");
+    }
+}
+
+// zoo/animals/reptiles/Snake.java
+package zoo.animals.reptiles;
+
+import zoo.food.Food;
+import zoo.food.Meat;
+
+public class Snake extends Reptile {
+    private double length;
+    private String pattern; // узор на коже
+    
+    public Snake(String name, int age, double weight, double length, 
+                 boolean isVenomous, String pattern) {
+        super(name, age, weight, "Различные", isVenomous, "Чешуйчатая");
+        this.length = length;
+        this.pattern = pattern;
+    }
+    
+    @Override
+    public void makeSound() {
+        System.out.println(getName() + " шипит: ШШШШШ!");
+    }
+    
+    @Override
+    public void eat(Food food) {
+        if (food instanceof Meat) {
+            System.out.println(getName() + " заглатывает добычу целиком");
+            setHungry(false);
+            setWeight(getWeight() + 0.5);
+        } else {
+            System.out.println(getName() + " не ест " + food.getFoodType());
+        }
+    }
+    
+    @Override
+    public void shedSkin() {
+        System.out.println(getName() + " сбрасывает кожу");
+    }
+    
+    public void coil() {
+        System.out.println(getName() + " сворачивается в клубок");
+    }
+}
+// zoo/employees/Employee.java
+package zoo.employees;
+
+public abstract class Employee {
+    private String name;
+    private int id;
+    private double salary;
+    private String department;
+    
+    public Employee(String name, int id, double salary, String department) {
+        this.name = name;
+        this.id = id;
+        this.salary = salary;
+        this.department = department;
+    }
+    
+    public abstract void performDuties();
+    
+    // Геттеры
+    public String getName() { return name; }
+    public int getId() { return id; }
+    public double getSalary() { return salary; }
+    public String getDepartment() { return department; }
+    
+    public void receiveSalary() {
+        System.out.println(name + " получает зарплату: $" + salary);
+    }
+}
+
+// zoo/employees/Zookeeper.java
+package zoo.employees;
+
+import zoo.animals.Animal;
+import zoo.food.Food;
+
+public class Zookeeper extends Employee {
+    private String[] assignedAnimals;
+    
+    public Zookeeper(String name, int id, double salary, String[] assignedAnimals) {
+        super(name, id, salary, "Содержание животных");
+        this.assignedAnimals = assignedAnimals;
+    }
+    
+    @Override
+    public void performDuties() {
+        System.out.println(getName() + " кормит животных и убирает в вольерах");
+    }
+    
+    public void feedAnimal(Animal animal, Food food) {
+        System.out.println(getName() + " кормит " + animal.getName());
+        animal.eat(food);
+    }
+    
+    public void cleanEnclosure(String enclosureId) {
+        System.out.println(getName() + " убирает вольер " + enclosureId);
+    }
+}
+
+// zoo/employees/Veterinarian.java
+package zoo.employees;
+
+import zoo.animals.Animal;
+
+public class Veterinarian extends Employee {
+    private String specialization;
+    
+    public Veterinarian(String name, int id, double salary, String specialization) {
+        super(name, id, salary, "Ветеринария");
+        this.specialization = specialization;
+    }
+    
+    @Override
+    public void performDuties() {
+        System.out.println(getName() + " осматривает животных и лечит их");
+    }
+    
+    public void examineAnimal(Animal animal) {
+        System.out.println(getName() + " осматривает " + animal.getName());
+        System.out.println("Состояние: " + (animal.isHungry() ? "голоден" : "сыт"));
+    }
+    
+    public void vaccinateAnimal(Animal animal) {
+        System.out.println(getName() + " вакцинирует " + animal.getName());
+    }
+}
+// zoo/enclosures/Enclosure.java
+package zoo.enclosures;
+
+import zoo.animals.Animal;
+import java.util.ArrayList;
+import java.util.List;
+
+public abstract class Enclosure {
+    private String id;
+    private double area; // площадь в кв.м
+    private int capacity;
+    private String climateType;
+    private List<Animal> animals;
+    
+    public Enclosure(String id, double area, int capacity, String climateType) {
+        this.id = id;
+        this.area = area;
+        this.capacity = capacity;
+        this.climateType = climateType;
+        this.animals = new ArrayList<>();
+    }
+    
+    public abstract void maintain();
+    
+    public boolean addAnimal(Animal animal) {
+        if (animals.size() < capacity) {
+            animals.add(animal);
+            System.out.println(animal.getName() + " добавлен в вольер " + id);
+            return true;
+        } else {
+            System.out.println("Вольер " + id + " заполнен!");
+            return false;
+        }
+    }
+    
+    public void removeAnimal(Animal animal) {
+        if (animals.remove(animal)) {
+            System.out.println(animal.getName() + " удален из вольера " + id);
+        }
+    }
+    
+    public void showAnimals() {
+        System.out.println("Животные в вольере " + id + ":");
+        for (Animal animal : animals) {
+            System.out.println("  - " + animal);
+        }
+    }
+    
+    // Геттеры
+    public String getId() { return id; }
+    public double getArea() { return area; }
+    public int getCapacity() { return capacity; }
+    public String getClimateType() { return climateType; }
+    public List<Animal> getAnimals() { return new ArrayList<>(animals); }
+}
+
+// zoo/enclosures/Cage.java
+package zoo.enclosures;
+
+public class Cage extends Enclosure {
+    private double fenceHeight;
+    private boolean hasShelter;
+    
+    public Cage(String id, double area, int capacity, String climateType, 
+                double fenceHeight, boolean hasShelter) {
+        super(id, area, capacity, climateType);
+        this.fenceHeight = fenceHeight;
+        this.hasShelter = hasShelter;
+    }
+    
+    @Override
+    public void maintain() {
+        System.out.println("Обслуживание клетки " + getId() + 
+                          ": проверка ограждения и уборка");
+    }
+    
+    public void lock() {
+        System.out.println("Клетка " + getId() + " закрыта на замок");
+    }
+}
+
+// zoo/enclosures/Aquarium.java
+package zoo.enclosures;
+
+public class Aquarium extends Enclosure {
+    private double waterVolume; // объем воды в литрах
+    private double waterTemperature;
+    private boolean hasFilter;
+    
+    public Aquarium(String id, double area, int capacity, String climateType,
+                    double waterVolume, double waterTemperature, boolean hasFilter) {
+        super(id, area, capacity, climateType);
+        this.waterVolume = waterVolume;
+        this.waterTemperature = waterTemperature;
+        this.hasFilter = hasFilter;
+    }
+    
+    @Override
+    public void maintain() {
+        System.out.println("Обслуживание аквариума " + getId() + 
+                          ": замена воды и чистка стекол");
+    }
+    
+    public void adjustTemperature(double newTemperature) {
+        this.waterTemperature = newTemperature;
+        System.out.println("Температура воды в аквариуме " + getId() + 
+                          " установлена на " + newTemperature + "°C");
+    }
+}
+// zoo/food/Food.java
+package zoo.food;
+
+public abstract class Food {
+    private String name;
+    private double weight; // вес в кг
+    private int calories; // калорийность на 100г
+    
+    public Food(String name, double weight, int calories) {
+        this.name = name;
+        this.weight = weight;
+        this.calories = calories;
+    }
+    
+    public abstract String getFoodType();
+    
+    // Геттеры
+    public String getName() { return name; }
+    public double getWeight() { return weight; }
+    public int getCalories() { return calories; }
+    
+    public void consume(double amount) {
+        if (amount <= weight) {
+            weight -= amount;
+            System.out.println("Съедено " + amount + " кг " + name);
+        }
+    }
+}
+
+// zoo/food/Meat.java
+package zoo.food;
+
+public class Meat extends Food {
+    private String animalSource;
+    private boolean isFresh;
+    
+    public Meat(String name, double weight, int calories, String animalSource, boolean isFresh) {
+        super(name, weight, calories);
+        this.animalSource = animalSource;
+        this.isFresh = isFresh;
+    }
+    
+    @Override
+    public String getFoodType() {
+        return "Мясо";
+    }
+    
+    // Геттеры
+    public String getAnimalSource() { return animalSource; }
+    public boolean isFresh() { return isFresh; }
+}
+
+// zoo/food/Plant.java
+package zoo.food;
+
+public class Plant extends Food {
+    private String plantType;
+    private boolean isSeasonal;
+    
+    public Plant(String name, double weight, int calories, String plantType, boolean isSeasonal) {
+        super(name, weight, calories);
+        this.plantType = plantType;
+        this.isSeasonal = isSeasonal;
+    }
+    
+    @Override
+    public String getFoodType() {
+        return "Растения";
+    }
+    
+    // Геттеры
+    public String getPlantType() { return plantType; }
+    public boolean isSeasonal() { return isSeasonal; }
+}
+// zoo/Main.java
+package zoo;
+
+import zoo.animals.mammals.Lion;
+import zoo.animals.mammals.Elephant;
+import zoo.animals.birds.Eagle;
+import zoo.animals.birds.Penguin;
+import zoo.animals.reptiles.Snake;
+import zoo.employees.Zookeeper;
+import zoo.employees.Veterinarian;
+import zoo.enclosures.Cage;
+import zoo.enclosures.Aquarium;
+import zoo.food.Meat;
+import zoo.food.Plant;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("========== ДОБРО ПОЖАЛОВАТЬ В ЗООПАРК! ==========\n");
+        
+        // Создаем животных
+        Lion simba = new Lion("Симба", 5, 190.0, 25.0, "Вожак");
+        Elephant dumbo = new Elephant("Дамбо", 10, 5000.0, 1.5, 2.0);
+        Eagle aquila = new Eagle("Аквала", 3, 5.0, 8.0);
+        Penguin pengu = new Penguin("Пенгу", 2, 15.0, 36.0);
+        Snake naga = new Snake("Нага", 4, 8.0, 3.5, true, "Полосатый");
+        
+        // Создаем еду
+        Meat beef = new Meat("Говядина", 10.0, 250, "Корова", true);
+        Meat fish = new Meat("Рыба", 5.0, 180, "Лосось", true);
+        Plant hay = new Plant("Сено", 50.0, 50, "Трава", false);
+        Plant fruits = new Plant("Фрукты", 20.0, 90, "Фрукты", true);
+        
+        // Создаем сотрудников
+        Zookeeper keeper = new Zookeeper("Иван Петров", 101, 50000, 
+            new String[]{"Львы", "Слоны"});
+        Veterinarian vet = new Veterinarian("Мария Иванова", 201, 70000, "Хирург");
+        
+        // Создаем вольеры
+        Cage lionCage = new Cage("LC-001", 200.0, 2, "Саванна", 3.0, true);
+        Cage elephantCage = new Cage("EC-001", 500.0, 1, "Тропики", 2.5, true);
+        Aquarium penguinAquarium = new Aquarium("PA-001", 100.0, 3, "Антарктика", 
+            50000.0, 4.0, true);
+        
+        // Размещаем животных в вольерах
+        lionCage.addAnimal(simba);
+        elephantCage.addAnimal(dumbo);
+        penguinAquarium.addAnimal(pengu);
+        
+        // Демонстрация полиморфизма
+        System.out.println("\n=== ДЕМОНСТРАЦИЯ ПОЛИМОРФИЗМА ===");
+        
+        // 1. Полиморфное поведение через абстрактный класс
+        System.out.println("\n1. Все животные издают звуки:");
+        simba.makeSound();
+        dumbo.makeSound();
+        aquila.makeSound();
+        pengu.makeSound();
+        naga.makeSound();
+        
+        // 2. Полиморфное поведение через интерфейсы
+        System.out.println("\n2. Животные с интерфейсом Runnable:");
+        simba.run();
+        System.out.println("Скорость бега льва: " + simba.getRunSpeed() + " км/ч");
+        
+        dumbo.run();
+        System.out.println("Скорость бега слона: " + dumbo.getRunSpeed() + " км/ч");
+        
+        pengu.run();
+        System.out.println("Стиль бега пингвина: " + pengu.getRunStyle());
+        
+        // 3. Множественное наследование через интерфейсы
+        System.out.println("\n3. Животные с несколькими интерфейсами:");
+        System.out.println("Слон может:");
+        dumbo.run();
+        dumbo.swim();
+        System.out.println("Максимальная глубина погружения: " + 
+                          dumbo.getMaxDiveDepth() + " м");
+        
+        System.out.println("\nПингвин может:");
+        pengu.run();
+        pengu.swim();
+        System.out.println("Скорость плавания: " + pengu.getSwimSpeed() + " км/ч");
+        
+        // 4. Работа сотрудников
+        System.out.println("\n=== РАБОТА СОТРУДНИКОВ ===");
+        keeper.performDuties();
+        keeper.feedAnimal(simba, beef);
+        keeper.feedAnimal(dumbo, hay);
+        keeper.cleanEnclosure("LC-001");
+        
+        vet.performDuties();
+        vet.examineAnimal(simba);
+        vet.vaccinateAnimal(dumbo);
+        
+        // 5. Обслуживание вольеров
+        System.out.println("\n=== ОБСЛУЖИВАНИЕ ВОЛЬЕРОВ ===");
+        lionCage.maintain();
+        lionCage.showAnimals();
+        
+        penguinAquarium.maintain();
+        penguinAquarium.adjustTemperature(3.5);
+        penguinAquarium.showAnimals();
+        
+        // 6. Специфичное поведение животных
+        System.out.println("\n=== СПЕЦИФИЧНОЕ ПОВЕДЕНИЕ ЖИВОТНЫХ ===");
+        simba.hunt();
+        dumbo.sprayWater();
+        aquila.spotPrey();
+        aquila.fly();
+        System.out.println("Максимальная высота полета орла: " + 
+                          aquila.getMaxFlightHeight() + " м");
+        pengu.slideOnBelly();
+        naga.coil();
+        
+        // 7. Иерархия и информация о животных
+        System.out.println("\n=== ИНФОРМАЦИЯ О ЖИВОТНЫХ ===");
+        System.out.println(simba);
+        System.out.println(dumbo);
+        System.out.println(aquila);
+        System.out.println(pengu);
+        System.out.println(naga);
+        
+        System.out.println("\n=== ИНФОРМАЦИЯ О СОТРУДНИКАХ ===");
+        System.out.println(keeper.getName() + ", отдел: " + keeper.getDepartment());
+        System.out.println(vet.getName() + ", специализация: " + 
+                          ((Veterinarian)vet).getSpecialization());
+        
+        System.out.println("\n========== ЗООПАРК РАБОТАЕТ УСПЕШНО! ==========");
+    }
+}
