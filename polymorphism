@@ -1,0 +1,124 @@
+// Базовый класс
+abstract class Animal {
+    private String name;
+    
+    public Animal(String name) {
+        this.name = name;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    // Абстрактный метод - полиморфное поведение
+    public abstract void makeSound();
+    
+    // Полиморфный метод с реализацией по умолчанию
+    public void move() {
+        System.out.println(name + " перемещается");
+    }
+}
+
+// Конкретные реализации
+class Dog extends Animal {
+    public Dog(String name) {
+        super(name);
+    }
+    
+    @Override
+    public void makeSound() {
+        System.out.println(getName() + " гавкает: Гав-гав!");
+    }
+    
+    @Override
+    public void move() {
+        System.out.println(getName() + " бежит на четырех лапах");
+    }
+}
+
+class Cat extends Animal {
+    public Cat(String name) {
+        super(name);
+    }
+    
+    @Override
+    public void makeSound() {
+        System.out.println(getName() + " мяукает: Мяу-мяу!");
+    }
+    
+    @Override
+    public void move() {
+        System.out.println(getName() + " крадется бесшумно");
+    }
+}
+
+class Bird extends Animal {
+    public Bird(String name) {
+        super(name);
+    }
+    
+    @Override
+    public void makeSound() {
+        System.out.println(getName() + " чирикает: Чик-чирик!");
+    }
+    
+    @Override
+    public void move() {
+        System.out.println(getName() + " летит по воздуху");
+    }
+}
+
+// Класс, демонстрирующий использование полиморфизма
+public class PolymorphismExample {
+    public static void main(String[] args) {
+        // Создаем массив животных (полиморфная коллекция)
+        Animal[] animals = {
+            new Dog("Барсик"),
+            new Cat("Мурзик"),
+            new Bird("Кеша"),
+            new Dog("Рекс")
+        };
+        
+        System.out.println("=== Демонстрация полиморфизма ===\n");
+        
+        // Полиморфный вызов методов
+        for (Animal animal : animals) {
+            animal.makeSound();  // Каждое животное издает свой звук
+            animal.move();       // Каждое животное двигается по-своему
+            System.out.println();
+        }
+        
+        // Демонстрация пользы полиморфизма
+        System.out.println("=== Польза полиморфизма ===\n");
+        
+        // 1. Единый интерфейс для разных типов
+        Animal myPet = getRandomAnimal();
+        myPet.makeSound();  // Не нужно знать конкретный тип
+        
+        // 2. Легкое расширение системы
+        System.out.println("\nЛегкое добавление нового типа животного:");
+        Animal fish = new Animal("Немо") {
+            @Override
+            public void makeSound() {
+                System.out.println(getName() + " булькает: Буль-буль!");
+            }
+            
+            @Override
+            public void move() {
+                System.out.println(getName() + " плавает в воде");
+            }
+        };
+        fish.makeSound();
+        fish.move();
+    }
+    
+    // Метод, возвращающий случайное животное (не нужно знать конкретный тип)
+    public static Animal getRandomAnimal() {
+        Animal[] options = {
+            new Dog("Случайный пес"),
+            new Cat("Случайный кот"),
+            new Bird("Случайная птица")
+        };
+        return options[(int)(Math.random() * options.length)];
+    }
+}
